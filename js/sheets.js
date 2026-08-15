@@ -72,27 +72,33 @@ window.SheetsClient = (function () {
   }
 
   /**
-   * Fetches the currently active event. Returns null if none is active
-   * or the request fails (caller shows the "no event" empty state either
-   * way — a fetch failure and a genuinely empty Events sheet look the
-   * same to the end user by design, per spec section 19).
+   * Fetches all currently active events (sorted by display_order).
+   * Returns [] if none are active or the request fails (caller shows the
+   * "no event" empty state either way — a fetch failure and a genuinely
+   * empty Events sheet look the same to the end user by design).
    */
-  async function getActiveEvent() {
+  async function getActiveEvents() {
     if (!isConfigured()) {
-      const local = JSON.parse(localStorage.getItem(localKey("event_override")) || "null");
-      return local; // null unless a demo event was set locally
+      const local = JSON.parse(localStorage.getItem(localKey("events_override")) || "[]");
+      return local; // [] unless demo events were set locally
     }
     try {
       const url = new URL(window.APP_CONFIG.API_ENDPOINT);
-      url.searchParams.set("action", "getActiveEvent");
-      const res = await fetch(url.toString(), { method: "GET" });
-      if (!res.ok) return null;
+      url.searchParams.set("action", "getActiveEvents");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s safety net
+      const res = await fetch(url.toString(), { method: "GET", signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!res.ok) return [];
       const data = await res.json();
-      return data && data.event ? data.event : null;
+      return data && Array.isArray(data.events) ? data.events : [];
     } catch (err) {
-      return null;
+      // Covers network errors AND the 10s timeout above — either way, the
+      // person sees the normal "belum tersedia" empty state with a retry
+      // button instead of a spinner that never resolves.
+      return [];
     }
   }
 
-  return { isConfigured, submitAssessment, submitRsvp, getActiveEvent };
+  return { isConfigured, submitAssessment, submitRsvp, getActiveEvents };
 })();
