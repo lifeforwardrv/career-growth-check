@@ -25,13 +25,22 @@
     contact: null, // { name, whatsapp, city }
     result: null, // computed by scoreAssessment
     submission: { status: "idle", error: null }, // idle | pending | done | error
-    event: undefined, // undefined = not fetched yet, null = none active, object = active event
+    events: undefined, // undefined = not fetched yet, [] = none active, [event,...] = active events
+    selectedEvent: null, // the event the person clicked "Reserve My Seat" on
     rsvp: { status: "idle", error: null },
+    finished: false, // once true, the session is no longer persisted — a refresh starts fresh at landing
   };
 
   function saveSession() {
     try {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+      if (state.finished) {
+        // Journey is done — don't keep it around. A refresh from here on
+        // (whether still on the result page, or after exploring events)
+        // should start a brand-new session at the landing page.
+        sessionStorage.removeItem(SESSION_KEY);
+      } else {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+      }
     } catch (e) {
       /* non-fatal */
     }
@@ -52,8 +61,8 @@
     render();
   }
 
-  function go(screen) {
-    setState({ screen });
+  function go(screen, extra) {
+    setState({ screen, ...(extra || {}) });
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   }
 
@@ -300,6 +309,7 @@
         <div class="secondary-pattern">
           ${c.secondaryLabel}<br/>
           <strong>${secondary.title}</strong> \u2014 ada pola ${secondary.title} yang juga cukup terlihat dalam jawabanmu.
+          <div style="margin-top:8px;font-style:italic;">${secondary.statement}</div>
         </div>
 
         <div class="share-card">
@@ -324,11 +334,27 @@
     return `<div class="screen"><div class="loading-inline" style="margin-top:20vh;justify-content:center;"><span class="spinner"></span><span>Memuat kemungkinan berikutnya\u2026</span></div></div>`;
   }
 
+  function eventCard(ev) {
+    return `
+      <div class="card event-card">
+        <p class="mono" style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">${COPY.event.label}</p>
+        <h2 class="display" style="font-size:22px;margin:2px 0 14px;">${ev.title || COPY.event.heading}</h2>
+        ${ev.imageUrl ? `<img class="event-flyer" src="${ev.imageUrl}" alt="${ev.title || ""}" onerror="this.style.display='none'"/>` : ""}
+        <p style="color:var(--ink-soft);font-size:14.5px;line-height:1.6;margin-bottom:18px;">${ev.description || COPY.event.body}</p>
+        <div class="event-meta">
+          ${ev.date ? `<div class="event-meta-row"><span class="k">Date</span><span>${ev.date}</span></div>` : ""}
+          ${ev.time ? `<div class="event-meta-row"><span class="k">Time</span><span>${ev.time}</span></div>` : ""}
+          ${ev.location ? `<div class="event-meta-row"><span class="k">Location</span><span>${ev.location}</span></div>` : ""}
+        </div>
+        <button class="btn btn-primary btn-block" data-action="rsvp-start" data-event-id="${ev.id || ""}">${COPY.event.cta}</button>
+      </div>`;
+  }
+
   function screenEvent() {
     const c = COPY.event;
-    const ev = state.event;
+    const events = state.events;
 
-    if (!ev) {
+    if (!events || events.length === 0) {
       return `
         <div class="screen">
           <div class="empty-state" style="margin-top:16vh;">
@@ -343,16 +369,8 @@
     return `
       <div class="screen">
         <span class="eyebrow">${c.eyebrow}</span>
-        <p class="mono" style="font-size:11.5px;color:var(--ink-soft);margin:8px 0 2px;">${c.label}</p>
-        <h2 class="display" style="margin:2px 0 16px;">${ev.title || c.heading}</h2>
-        ${ev.imageUrl ? `<img class="event-flyer" src="${ev.imageUrl}" alt="${ev.title || ""}" onerror="this.style.display='none'"/>` : ""}
-        <p style="color:var(--ink-soft);font-size:14.5px;line-height:1.6;margin-bottom:18px;">${ev.description || c.body}</p>
-        <div class="event-meta">
-          ${ev.date ? `<div class="event-meta-row"><span class="k">Date</span><span>${ev.date}</span></div>` : ""}
-          ${ev.time ? `<div class="event-meta-row"><span class="k">Time</span><span>${ev.time}</span></div>` : ""}
-          ${ev.location ? `<div class="event-meta-row"><span class="k">Location</span><span>${ev.location}</span></div>` : ""}
-        </div>
-        <button class="btn btn-primary btn-block" data-action="rsvp-start">${c.cta}</button>
+        ${events.length > 1 ? `<p style="color:var(--ink-soft);font-size:14px;margin:8px 0 20px;">Ada ${events.length} kemungkinan yang bisa kamu lihat sekarang.</p>` : ""}
+        ${events.map(eventCard).join("")}
       </div>`;
   }
 
@@ -432,31 +450,27 @@
     };
     try {
       await window.SheetsClient.submitAssessment(record);
-      go("result");
+      go("result", { finished: true });
     } catch (err) {
       setState({ screen: "submitError" });
     }
   }
 
-  async function loadEvent() {
+  async function loadEvents() {
     setState({ screen: "eventLoading" });
-    const ev = await window.SheetsClient.getActiveEvent();
-    setState({ event: ev, screen: "event" });
+    const events = await window.SheetsClient.getActiveEvents();
+    setState({ events, screen: "event" });
   }
 
   async function submitRsvp(name, whatsapp) {
     const ref = window.Referral.get();
-    const eventTitle = state.event ? state.event.title : COPY.event.heading;
-    const eventDate = state.event ? state.event.date : "";
-    const eventTime = state.event ? state.event.time : "";
+    const ev = state.selectedEvent;
+    const eventTitle = ev ? ev.title : COPY.event.heading;
+    const eventDate = ev ? ev.date : "";
+    const eventTime = ev ? ev.time : "";
 
-    // Log to Sheets in the background (for your internal record + ref
-    // attribution). This is best-effort: a Sheets hiccup should not block
-    // the WhatsApp handoff, since the conversation itself carries the
-    // name + ref, and the person's seat isn't truly "reserved" until you
-    // reply on WhatsApp anyway.
-    window.SheetsClient
-      .submitRsvp({
+    try {
+      await window.SheetsClient.submitRsvp({
         timestamp: new Date().toISOString(),
         name,
         whatsapp,
@@ -465,18 +479,11 @@
         eventDate,
         eventTime,
         consent: true,
-      })
-      .catch(() => {
-        /* non-fatal — WhatsApp handoff still proceeds below */
       });
-
-    const waBase =
-      (state.event && state.event.registrationUrl) || `https://wa.me/${window.APP_CONFIG.FALLBACK_WHATSAPP || ""}`;
-    const text = COPY.rsvp.waMessageTemplate(name, eventTitle, eventDate, eventTime, ref);
-    const waUrl = `${waBase}?text=${encodeURIComponent(text)}`;
-
-    go("rsvpSuccess");
-    window.open(waUrl, "_blank");
+      go("rsvpSuccess", { finished: true });
+    } catch (err) {
+      setState({ rsvpError: COPY.errors.submitFailed });
+    }
   }
 
   /** ---------------- event delegation ---------------- */
@@ -503,7 +510,7 @@
     } else if (action === "retry-submit") {
       submitAssessment();
     } else if (action === "share") {
-      const url = window.Referral.buildShareUrl(state.contact ? state.contact.name : "");
+      const url = window.Referral.buildShareUrl();
       const text = COPY.share.waMessageTemplate(url);
       if (navigator.share) {
         navigator.share({ text, url }).catch(() => {});
@@ -511,10 +518,13 @@
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
       }
     } else if (action === "explore") {
-      loadEvent();
+      loadEvents();
     } else if (action === "retry-event") {
-      loadEvent();
+      loadEvents();
     } else if (action === "rsvp-start") {
+      const eventId = btn.dataset.eventId;
+      const selected = (state.events || []).find((e) => String(e.id) === String(eventId)) || (state.events || [])[0] || null;
+      setState({ selectedEvent: selected });
       go("rsvp");
     }
   });
