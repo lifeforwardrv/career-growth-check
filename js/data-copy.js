@@ -84,7 +84,7 @@ window.APP_COPY = {
   },
 
   event: {
-    eyebrow: "ONE POSSIBILITY WORTH EXPLORING",
+    eyebrow: "ONE STEP WORTH EXPLORING",
     label: "UPCOMING EVENT",
     heading: "Explore the Possibility",
     body: "Kesempatan untuk melihat pilihan lain dalam perjalanan kariermu \u2014 mengenal bagaimana sebuah bisnis bekerja, seperti apa cara memulainya, dan apakah kemungkinan ini cocok untukmu.",
