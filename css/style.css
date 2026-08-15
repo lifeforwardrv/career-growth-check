@@ -324,15 +324,15 @@ button { font-family: inherit; }
   text-align: center;
   padding: 30px 22px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(160deg, #2a2118 0%, #3b2c1e 100%);
-  color: #f6efe2;
+  background: linear-gradient(160deg, var(--rust) 0%, var(--rust-dark) 100%);
+  color: #fff8f2;
   margin-top: 8px;
 }
-.explore-card .eyebrow { color: var(--rose); }
+.explore-card .eyebrow { color: #ffe4d6; }
 .explore-card h2 { font-size: clamp(22px, 5vw, 28px); margin: 10px 0 12px; }
-.explore-card p { color: #e6dccb; font-size: 14.5px; line-height: 1.6; margin: 0 0 22px; }
-.explore-card .btn-primary { background: var(--rose); color: #2a2118; }
-.explore-card .btn-primary:hover { background: #e0b8a4; }
+.explore-card p { color: #fbe9de; font-size: 14.5px; line-height: 1.6; margin: 0 0 22px; }
+.explore-card .btn-primary { background: #fff8f2; color: var(--rust-dark); }
+.explore-card .btn-primary:hover { background: #ffe4d6; }
 
 /* ---------- event ---------- */
 
@@ -344,6 +344,8 @@ button { font-family: inherit; }
   display: block;
   background: var(--line-soft);
 }
+.event-card { margin-bottom: 16px; }
+.event-card:last-child { margin-bottom: 6px; }
 .event-meta { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
 .event-meta-row { display: flex; gap: 10px; font-size: 14.5px; }
 .event-meta-row .k { color: var(--ink-soft); min-width: 78px; flex-shrink: 0; }
