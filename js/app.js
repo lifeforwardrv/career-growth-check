@@ -321,7 +321,7 @@
         <div class="explore-card">
           <span class="eyebrow">${explore.heading}</span>
           <h2 class="display">${explore.headline}</h2>
-          <p>${explore.body}<br/><br/>${explore.subBody}</p>
+          <p>${explore.body}${explore.subBody ? `<br/><br/>${explore.subBody}` : ""}</p>
           <button class="btn btn-primary" data-action="explore">${explore.cta}</button>
         </div>
 
