@@ -369,7 +369,7 @@
     return `
       <div class="screen">
         <span class="eyebrow">${c.eyebrow}</span>
-        ${events.length > 1 ? `<p style="color:var(--ink-soft);font-size:14px;margin:8px 0 20px;">Ada ${events.length} kemungkinan yang bisa kamu lihat sekarang.</p>` : ""}
+        ${events.length > 1 ? `<p style="color:var(--ink-soft);font-size:14px;margin:8px 0 20px;">Ada ${events.length} cara untuk melangkah lebih jauh dari sini.</p>` : ""}
         ${state.eventRegisterError ? `<div class="error-banner">${state.eventRegisterError}</div>` : ""}
         ${events.map(eventCard).join("")}
       </div>`;
