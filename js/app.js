@@ -369,6 +369,11 @@
   }
 
   function eventCard(ev) {
+    const hasExternalBooking = !!(ev.registrationUrl && String(ev.registrationUrl).trim());
+    const ctaButton = hasExternalBooking
+      ? `<button class="btn btn-primary btn-block" data-action="open-external-booking" data-url="${ev.registrationUrl}" data-event-id="${ev.id || ""}">${ev.ctaLabel || COPY.event.cta}</button>`
+      : `<button class="btn btn-primary btn-block" data-action="register-event" data-event-id="${ev.id || ""}">${ev.ctaLabel || COPY.event.cta}</button>`;
+
     return `
       <div class="card event-card">
         <p class="mono" style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">${COPY.event.label}</p>
@@ -380,7 +385,7 @@
           ${ev.time ? `<div class="event-meta-row"><span class="k">Time</span><span>${ev.time}</span></div>` : ""}
           ${ev.location ? `<div class="event-meta-row"><span class="k">Location</span><span>${ev.location}</span></div>` : ""}
         </div>
-        <button class="btn btn-primary btn-block" data-action="register-event" data-event-id="${ev.id || ""}">${ev.ctaLabel || COPY.event.cta}</button>
+        ${ctaButton}
       </div>`;
   }
 
@@ -549,6 +554,9 @@
       loadEvents();
     } else if (action === "retry-event") {
       loadEvents();
+    } else if (action === "open-external-booking") {
+      window.SheetsClient.trackEvent("event_register_external");
+      window.open(btn.dataset.url, "_blank");
     } else if (action === "register-event") {
       const eventId = btn.dataset.eventId;
       const selected = (state.events || []).find((e) => String(e.id) === String(eventId)) || (state.events || [])[0] || null;
