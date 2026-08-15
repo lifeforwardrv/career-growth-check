@@ -22,7 +22,7 @@
     screen: "landing",
     qIndex: 0,
     answers: {}, // { questionId: optionId }
-    contact: null, // { name, whatsapp, city }
+    contact: null, // { name, whatsapp, interestFocus }
     result: null, // computed by scoreAssessment
     submission: { status: "idle", error: null }, // idle | pending | done | error
     events: undefined, // undefined = not fetched yet, [] = none active, [event,...] = active events
@@ -189,6 +189,8 @@
   function screenGate() {
     const c = COPY.contactGate;
     const err = state.gateError;
+    const primary = state.result ? PROFILES[state.result.primary] : null;
+
     return `
       <div class="screen">
         <span class="eyebrow">${c.kicker}</span>
@@ -196,13 +198,31 @@
         <p style="color:var(--ink-soft);font-size:15px;margin:0 0 4px;">${c.subheading}</p>
         <p style="color:var(--ink-soft);font-size:14.5px;line-height:1.55;">${c.body}</p>
 
-        <div class="gate-preview">
-          ${c.previewItems
+        ${
+          primary
+            ? `
+        <div class="card" style="margin-top:18px;">
+          <span class="eyebrow">${c.previewEyebrow}</span>
+          <h2 class="display" style="font-size:24px;margin:8px 0 4px;">${primary.title}</h2>
+          <p style="font-style:italic;color:var(--ink-soft);margin:0 0 14px;">${primary.statement}</p>
+          <h3>${c.strengthsLabel}</h3>
+          ${primary.strengths.map((s) => `<p style="margin:0 0 4px;font-size:14.5px;">${s.title}</p>`).join("")}
+        </div>`
+            : ""
+        }
+
+        <div style="margin-top:22px;">
+          <h3 class="display" style="font-size:19px;margin:0 0 8px;">${c.deeperHeading}</h3>
+          <p style="color:var(--ink-soft);font-size:14.5px;margin:0 0 12px;">${c.deeperIntro}</p>
+        </div>
+
+        <div class="check-list">
+          ${c.deeperChecklist
             .map(
               (item) => `
-            <div class="gate-preview-item">
+            <div class="check-item">
               <span class="check">\u2713</span>
-              <div><strong>${item.title}</strong><span>${item.text}</span></div>
+              <span>${item}</span>
             </div>`
             )
             .join("")}
@@ -220,12 +240,20 @@
             <input type="tel" name="whatsapp" autocomplete="tel" placeholder="08123456789" />
           </div>
           <div class="field">
-            <label>${c.fields.city}</label>
-            <select name="city">
-              <option value="">Pilih domisili</option>
-              ${c.cityOptions.map((opt) => `<option value="${opt}">${opt}</option>`).join("")}
-            </select>
+            <label>${c.fields.interest}</label>
+            <div class="radio-group">
+              ${c.interestOptions
+                .map(
+                  (opt) => `
+                <label class="radio-option">
+                  <input type="radio" name="interest" value="${opt}" />
+                  <span>${opt}</span>
+                </label>`
+                )
+                .join("")}
+            </div>
           </div>
+          <p class="whatsapp-note">${c.whatsappNote}</p>
           <label class="consent">
             <input type="checkbox" name="consent" />
             <span>${c.consent}</span>
@@ -428,7 +456,7 @@
       timestamp: new Date().toISOString(),
       name: state.contact.name,
       whatsapp: state.contact.whatsapp,
-      city: state.contact.city,
+      interestFocus: state.contact.interestFocus,
       ref: window.Referral.get(),
       source: document.referrer || "direct",
       answers: state.answers,
@@ -479,6 +507,10 @@
     const action = btn.dataset.action;
 
     if (action === "start") {
+      if (!sessionStorage.getItem("cgc_tracked_quiz_start")) {
+        sessionStorage.setItem("cgc_tracked_quiz_start", "1");
+        window.SheetsClient.trackEvent("quiz_start");
+      }
       go("question");
     } else if (action === "answer") {
       const q = QUESTIONS[state.qIndex];
@@ -491,6 +523,12 @@
       if (state.qIndex < QUESTIONS.length - 1) {
         setState({ qIndex: state.qIndex + 1 });
       } else {
+        const result = window.Scoring.scoreAssessment(state.answers);
+        setState({ result });
+        if (!sessionStorage.getItem("cgc_tracked_quiz_complete")) {
+          sessionStorage.setItem("cgc_tracked_quiz_complete", "1");
+          window.SheetsClient.trackEvent("quiz_complete");
+        }
         go("gate");
       }
     } else if (action === "retry-submit") {
@@ -504,6 +542,10 @@
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
       }
     } else if (action === "explore") {
+      if (!sessionStorage.getItem("cgc_tracked_explore")) {
+        sessionStorage.setItem("cgc_tracked_explore", "1");
+        window.SheetsClient.trackEvent("explore_view");
+      }
       loadEvents();
     } else if (action === "retry-event") {
       loadEvents();
@@ -520,22 +562,25 @@
       const fd = new FormData(e.target);
       const name = (fd.get("name") || "").toString().trim();
       const whatsapp = (fd.get("whatsapp") || "").toString().trim();
-      const city = (fd.get("city") || "").toString().trim();
+      const interestFocus = (fd.get("interest") || "").toString().trim();
       const consent = fd.get("consent") === "on";
       const errs = COPY.errors;
 
       if (!name) return setState({ gateError: errs.invalidName });
       if (!isValidWhatsapp(whatsapp)) return setState({ gateError: errs.invalidWhatsapp });
-      if (!city) return setState({ gateError: errs.invalidCity });
+      if (!interestFocus) return setState({ gateError: errs.invalidInterest });
       if (!consent) return setState({ gateError: errs.consentRequired });
 
-      const result = window.Scoring.scoreAssessment(state.answers);
-      setState({ contact: { name, whatsapp, city }, result, gateError: null });
+      setState({ contact: { name, whatsapp, interestFocus }, gateError: null });
       submitAssessment();
     }
   });
 
   /** ---------------- boot ---------------- */
   window.Referral.capture();
+  if (!sessionStorage.getItem("cgc_tracked_landing")) {
+    sessionStorage.setItem("cgc_tracked_landing", "1");
+    window.SheetsClient.trackEvent("landing_view");
+  }
   render();
 })();
