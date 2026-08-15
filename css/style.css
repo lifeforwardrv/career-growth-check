@@ -318,6 +318,29 @@ button { font-family: inherit; }
 .share-card h3.display { font-size: 20px; margin: 6px 0 8px; }
 .share-card p { color: var(--ink-soft); font-size: 14.5px; line-height: 1.55; margin: 0 0 18px; }
 
+/* ---------- pre-explore reflection ---------- */
+
+.reflect-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  padding: 24px 22px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-card);
+}
+.reflect-card h3 {
+  font-family: "Fraunces", serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 14px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.reflect-card p { font-size: 15px; line-height: 1.65; color: var(--ink); margin: 0 0 12px; }
+.reflect-card p:last-child { margin-bottom: 0; }
+.reflect-card strong { color: var(--rust); }
+
 /* ---------- explore possibility ---------- */
 
 .explore-card {
