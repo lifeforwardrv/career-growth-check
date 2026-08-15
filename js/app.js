@@ -346,7 +346,7 @@
           ${ev.time ? `<div class="event-meta-row"><span class="k">Time</span><span>${ev.time}</span></div>` : ""}
           ${ev.location ? `<div class="event-meta-row"><span class="k">Location</span><span>${ev.location}</span></div>` : ""}
         </div>
-        <button class="btn btn-primary btn-block" data-action="rsvp-start" data-event-id="${ev.id || ""}">${COPY.event.cta}</button>
+        <button class="btn btn-primary btn-block" data-action="register-event" data-event-id="${ev.id || ""}">${ev.ctaLabel || COPY.event.cta}</button>
       </div>`;
   }
 
@@ -370,38 +370,21 @@
       <div class="screen">
         <span class="eyebrow">${c.eyebrow}</span>
         ${events.length > 1 ? `<p style="color:var(--ink-soft);font-size:14px;margin:8px 0 20px;">Ada ${events.length} kemungkinan yang bisa kamu lihat sekarang.</p>` : ""}
+        ${state.eventRegisterError ? `<div class="error-banner">${state.eventRegisterError}</div>` : ""}
         ${events.map(eventCard).join("")}
       </div>`;
   }
 
-  /** ---------------- screen: rsvp ---------------- */
-  function screenRsvp() {
-    const c = COPY.rsvp;
-    const err = state.rsvpError;
+  function screenRegistering() {
     return `
       <div class="screen">
-        <span class="eyebrow">${c.heading}</span>
-        <h2 class="display" style="font-size:28px;margin:6px 0 4px;">${c.subheading}</h2>
-        <p style="color:var(--ink-soft);font-size:14.5px;line-height:1.55;margin-bottom:20px;">${c.body}</p>
-        ${err ? `<div class="error-banner">${err}</div>` : ""}
-        <form id="rsvp-form">
-          <div class="field">
-            <label>${c.fields.name}</label>
-            <input type="text" name="name" value="${(state.contact && state.contact.name) || ""}" />
-          </div>
-          <div class="field">
-            <label>${c.fields.whatsapp}</label>
-            <input type="tel" name="whatsapp" value="${(state.contact && state.contact.whatsapp) || ""}" />
-          </div>
-          <label class="consent">
-            <input type="checkbox" name="consent" />
-            <span>${c.consent}</span>
-          </label>
-          <button type="submit" class="btn btn-primary btn-block">${c.cta}</button>
-        </form>
+        <div class="loading-inline" style="margin-top:30vh;justify-content:center;">
+          <span class="spinner"></span><span>Mendaftarkan kamu ke event\u2026</span>
+        </div>
       </div>`;
   }
 
+  /** ---------------- screen: rsvp ---------------- */
   function screenRsvpSuccess() {
     const c = COPY.rsvp.success;
     return `
@@ -425,7 +408,7 @@
       result: screenResult,
       eventLoading: screenEventLoading,
       event: screenEvent,
-      rsvp: screenRsvp,
+      registering: screenRegistering,
       rsvpSuccess: screenRsvpSuccess,
     };
     const fn = map[state.screen] || screenLanding;
@@ -462,27 +445,24 @@
     setState({ events, screen: "event" });
   }
 
-  async function submitRsvp(name, whatsapp) {
-    const ref = window.Referral.get();
-    const ev = state.selectedEvent;
-    const eventTitle = ev ? ev.title : COPY.event.heading;
-    const eventDate = ev ? ev.date : "";
-    const eventTime = ev ? ev.time : "";
+  async function registerForEvent(ev) {
+    const contact = state.contact || {};
+    setState({ selectedEvent: ev, screen: "registering", eventRegisterError: null });
 
     try {
       await window.SheetsClient.submitRsvp({
         timestamp: new Date().toISOString(),
-        name,
-        whatsapp,
-        ref,
-        eventName: eventTitle,
-        eventDate,
-        eventTime,
-        consent: true,
+        name: contact.name || "",
+        whatsapp: contact.whatsapp || "",
+        ref: window.Referral.get(),
+        eventName: ev ? ev.title : "",
+        eventDate: ev ? ev.date : "",
+        eventTime: ev ? ev.time : "",
+        consent: true, // consent already given when they submitted the assessment contact gate
       });
       go("rsvpSuccess", { finished: true });
     } catch (err) {
-      setState({ rsvpError: COPY.errors.submitFailed });
+      setState({ screen: "event", eventRegisterError: COPY.errors.submitFailed });
     }
   }
 
@@ -521,11 +501,10 @@
       loadEvents();
     } else if (action === "retry-event") {
       loadEvents();
-    } else if (action === "rsvp-start") {
+    } else if (action === "register-event") {
       const eventId = btn.dataset.eventId;
       const selected = (state.events || []).find((e) => String(e.id) === String(eventId)) || (state.events || [])[0] || null;
-      setState({ selectedEvent: selected });
-      go("rsvp");
+      registerForEvent(selected);
     }
   });
 
@@ -547,22 +526,6 @@
       const result = window.Scoring.scoreAssessment(state.answers);
       setState({ contact: { name, whatsapp, city }, result, gateError: null });
       submitAssessment();
-    }
-
-    if (e.target.id === "rsvp-form") {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const name = (fd.get("name") || "").toString().trim();
-      const whatsapp = (fd.get("whatsapp") || "").toString().trim();
-      const consent = fd.get("consent") === "on";
-      const errs = COPY.errors;
-
-      if (!name) return setState({ rsvpError: errs.invalidName });
-      if (!isValidWhatsapp(whatsapp)) return setState({ rsvpError: errs.invalidWhatsapp });
-      if (!consent) return setState({ rsvpError: errs.consentRequired });
-
-      setState({ rsvpError: null });
-      submitRsvp(name, whatsapp);
     }
   });
 
