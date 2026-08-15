@@ -263,6 +263,7 @@
     const c = COPY.result;
     const share = COPY.share;
     const explore = COPY.explorePossibility;
+    const reflect = COPY.resultReflect;
 
     return `
       <div class="screen">
@@ -312,10 +313,9 @@
           <div style="margin-top:8px;font-style:italic;">${secondary.statement}</div>
         </div>
 
-        <div class="share-card">
-          <h3 class="display">${share.heading}</h3>
-          <p><strong style="display:block;color:var(--ink);margin-bottom:6px;">${share.subheading}</strong>${share.body}</p>
-          <button class="btn btn-primary" data-action="share">${share.cta}</button>
+        <div class="reflect-card">
+          <h3>${reflect.heading}</h3>
+          ${reflect.bodyParagraphs.map((p) => `<p>${p}</p>`).join("")}
         </div>
 
         <div class="explore-card">
@@ -323,6 +323,12 @@
           <h2 class="display">${explore.headline}</h2>
           <p>${explore.body}${explore.subBody ? `<br/><br/>${explore.subBody}` : ""}</p>
           <button class="btn btn-primary" data-action="explore">${explore.cta}</button>
+        </div>
+
+        <div class="share-card">
+          <h3 class="display">${share.heading}</h3>
+          <p><strong style="display:block;color:var(--ink);margin-bottom:6px;">${share.subheading}</strong>${share.body}</p>
+          <button class="btn btn-primary" data-action="share">${share.cta}</button>
         </div>
 
         <footer class="byline">Career & Growth Check \u2014 self-reflection snapshot, bukan diagnosis psikologis.</footer>
