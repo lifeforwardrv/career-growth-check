@@ -100,5 +100,39 @@ window.SheetsClient = (function () {
     }
   }
 
-  return { isConfigured, submitAssessment, submitRsvp, getActiveEvents };
+  /**
+   * Fires an anonymous funnel-stage ping (e.g. "landing_view", "quiz_start").
+   * No name/WhatsApp is ever included here \u2014 only stage + session id + ref,
+   * so this can run before the person has given any consent. Never blocks
+   * the UI and never throws \u2014 a failed ping just means one missing data
+   * point in the Funnel Summary sheet, nothing the person notices.
+   */
+  function trackEvent(eventName) {
+    if (!isConfigured()) return;
+    try {
+      let sessionId = sessionStorage.getItem("cgc_session_id");
+      if (!sessionId) {
+        sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random();
+        sessionStorage.setItem("cgc_session_id", sessionId);
+      }
+      const payload = JSON.stringify({
+        action: "track",
+        timestamp: new Date().toISOString(),
+        event: eventName,
+        sessionId,
+        ref: (window.Referral && window.Referral.get()) || "",
+        source: document.referrer || "direct",
+      });
+      fetch(window.APP_CONFIG.API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: payload,
+        keepalive: true, // survives the tab closing right after the call
+      }).catch(() => {});
+    } catch (err) {
+      /* non-fatal, tracking should never break the app */
+    }
+  }
+
+  return { isConfigured, submitAssessment, submitRsvp, getActiveEvents, trackEvent };
 })();
