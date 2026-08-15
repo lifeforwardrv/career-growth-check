@@ -75,12 +75,20 @@ window.APP_COPY = {
       `Aku baru selesai isi Career & Growth Check \u2014 semacam refleksi singkat soal pola growth diri sendiri. Coba juga, cuma ${"\u00B13 menit"}: ${url}`,
   },
 
+  resultReflect: {
+    heading: "So, what could this mean for you?",
+    bodyParagraphs: [
+      "Dari jawabanmu, ada beberapa pola yang terlihat tentang bagaimana kamu berkembang, apa yang mungkin membuatmu engaged, dan lingkungan seperti apa yang mungkin cocok untukmu.",
+      "Tapi self-discovery baru berguna kalau kita mulai melihat <strong>apa yang bisa kita lakukan dengan insight ini</strong>.",
+    ],
+  },
+
   explorePossibility: {
     heading: "ONE POSSIBILITY WORTH EXPLORING",
-    headline: "What if your next career move isn\u2019t what you expected?",
-    body: "Kenali satu jalur yang mungkin belum pernah kamu pertimbangkan sebelumnya.",
+    headline: "Want to explore this further?",
+    body: "Ada beberapa cara untuk melangkah dari sini \u2014 mulai dari ngobrol 1-on-1 sampai melihat langsung bagaimana sebuah business opportunity bekerja.",
     subBody: "",
-    cta: "Explore a Different Path \u2192",
+    cta: "Explore What\u2019s Next \u2192",
   },
 
   event: {
