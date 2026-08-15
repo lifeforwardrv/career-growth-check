@@ -76,12 +76,12 @@ window.APP_COPY = {
   },
 
   explorePossibility: {
-  heading: "ONE POSSIBILITY WORTH EXPLORING",
-  headline: "What else could be possible for you?",
-  body: "Mungkin ada lebih dari satu cara untuk mengembangkan potensi yang kamu punya dan membangun perjalanan karier yang sesuai dengan potensi yang kamu punya.",
-  subbody: "Lihat pilihannya. Kenali lebih jauh. Lalu tentukan sendiri.",
-  cta: "See What’s Possible →",
-},
+    heading: "ONE POSSIBILITY WORTH EXPLORING",
+    headline: "What if your next career move isn\u2019t what you expected?",
+    body: "Kenali satu jalur yang mungkin belum pernah kamu pertimbangkan sebelumnya.",
+    subBody: "",
+    cta: "Explore a Different Path \u2192",
+  },
 
   event: {
     eyebrow: "ONE POSSIBILITY WORTH EXPLORING",
