@@ -85,6 +85,7 @@ window.SheetsClient = (function () {
     try {
       const url = new URL(window.APP_CONFIG.API_ENDPOINT);
       url.searchParams.set("action", "getActiveEvents");
+      url.searchParams.set("ref", (window.Referral && window.Referral.get()) || "");
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s safety net
       const res = await fetch(url.toString(), { method: "GET", signal: controller.signal });
