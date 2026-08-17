@@ -11,7 +11,7 @@
 window.APP_CONFIG = {
   // Paste the deployed Apps Script Web App URL here (ends in /exec).
   // One endpoint handles both submissions and event lookups (see Code.gs).
-  API_ENDPOINT: "https://script.google.com/macros/s/AKfycbxaFsixJBWOCBi8aBycRGtlMW3-7CeOQfPwa1N-xMX7AyGHn1t51nGIpXCocpMkY-Nysw/exec",
+  API_ENDPOINT: "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE",
 
   // Shown in the browser tab / share text.
   ASSESSMENT_NAME: "Career & Growth Check",
