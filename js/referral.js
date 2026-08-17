@@ -30,14 +30,16 @@ window.Referral = (function () {
   }
 
   /**
-   * Builds a shareable link that preserves the CURRENT USER as the new
-   * referrer (so their contacts land with ?ref=<their name>), per spec
-   * section 17 ("The shared link should preserve the referrer" = the
-   * person who is doing the sharing).
+   * Builds a shareable link that preserves the ORIGINAL referrer for the
+   * whole chain — i.e. if Kenvin's link brought someone in, and that
+   * person shares their result with a friend, the friend's link still
+   * carries ?ref=Kenvin (not the person's own name). This keeps every
+   * lead in a chain attributed to whoever first brought people in,
+   * rather than resetting at each share.
    */
-  function buildShareUrl(sharerName) {
+  function buildShareUrl() {
     const url = new URL(baseUrl());
-    url.searchParams.set("ref", sharerName || get() || "friend");
+    url.searchParams.set("ref", get() || "friend");
     return url.toString();
   }
 
