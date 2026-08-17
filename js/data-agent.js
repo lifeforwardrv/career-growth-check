@@ -22,5 +22,6 @@ window.APP_DEFAULT_AGENT = {
   ref: "",
   name: "Vicia",
   photoUrl: "",
+  role: "Business Leader & Financial Services Professional",
   whyRelevant: "Ngobrol singkat untuk membantu kamu melihat hasil ini dari sudut pandang lain.",
 };
