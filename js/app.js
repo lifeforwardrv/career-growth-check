@@ -14,6 +14,8 @@
   const DIMS = window.APP_DIMENSIONS;
   const DIM_ORDER = window.APP_DIMENSION_ORDER;
   const PROFILES = window.APP_PROFILES;
+  const COMBINATIONS = window.APP_COMBINATIONS;
+  const DEFAULT_AGENT = window.APP_DEFAULT_AGENT;
 
   const SESSION_KEY = "cgc_session_v1";
 
@@ -22,13 +24,17 @@
     screen: "landing",
     qIndex: 0,
     answers: {}, // { questionId: optionId }
-    contact: null, // { name, whatsapp, interestFocus }
-    result: null, // computed by scoreAssessment
+    contact: null, // { name, whatsapp } — only collected once a CTA is clicked
+    contactPurpose: null, // 'agent' | 'business' — which CTA triggered the contact form
+    growthIntent: null, // one of growthIntent.options[].id — self-reflection, not a gate
+    result: null, // computed by scoreAssessment (available immediately after Q15, no contact needed)
     submission: { status: "idle", error: null }, // idle | pending | done | error
     events: undefined, // undefined = not fetched yet, [] = none active, [event,...] = active events
     selectedEvent: null, // the event the person clicked "Reserve My Seat" on
     rsvp: { status: "idle", error: null },
     finished: false, // once true, the session is no longer persisted — a refresh starts fresh at landing
+    agentInfo: null, // { name, photoUrl, whyRelevant, registrationUrl } sourced from the matching Events row; falls back to DEFAULT_AGENT
+    expandedEventId: null, // which business-event card currently has its inline RSVP form open
   };
 
   function saveSession() {
@@ -61,8 +67,26 @@
     render();
   }
 
+  // Not persisted across refresh on purpose \u2014 a fresh page load always
+  // starts with no back-history, which is fine since it also starts at
+  // the landing screen.
+  let history = [];
+
+  // Screens that should never appear as a back-target (transient/loading —
+  // landing on the way back to one of these would be confusing).
+  const TRANSIENT_SCREENS = ["submitting", "eventLoading", "registering"];
+
   function go(screen, extra) {
+    if (state.screen !== screen && !TRANSIENT_SCREENS.includes(state.screen)) {
+      history.push(state.screen);
+    }
     setState({ screen, ...(extra || {}) });
+    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  }
+
+  function goBack() {
+    const prev = history.pop();
+    setState({ screen: prev || "landing" });
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   }
 
@@ -70,6 +94,13 @@
   function isValidWhatsapp(v) {
     const digits = (v || "").replace(/[^\d]/g, "");
     return digits.length >= 9 && digits.length <= 15;
+  }
+
+  /** Renders text as one or more <p> tags. Accepts an array of paragraphs
+   * or a single string with blank-line-separated paragraphs. */
+  function renderParagraphs(text) {
+    const parts = Array.isArray(text) ? text : String(text || "").split(/\n\n+/);
+    return parts.map((p) => `<p>${p}</p>`).join("");
   }
 
   /** ---------------- SVG: signature growth-print radar ---------------- */
@@ -80,40 +111,40 @@
   }
 
   function renderRadar(scores) {
-    const size = 360;
+    const size = 420;
     const cx = size / 2;
     const cy = size / 2;
-    const radius = 72;
+    const radius = 122;
     const total = DIM_ORDER.length;
     const rings = [0.25, 0.5, 0.75, 1];
 
     const ringPolys = rings
       .map((ratio) => {
         const pts = DIM_ORDER.map((_, i) => radarPoint(cx, cy, radius, i, total, ratio).join(",")).join(" ");
-        return `<polygon points="${pts}" fill="none" stroke="#e6dccb" stroke-width="1"/>`;
+        return `<polygon points="${pts}" fill="none" stroke="#E1DCCF" stroke-width="1"/>`;
       })
       .join("");
 
     const axisLines = DIM_ORDER.map((_, i) => {
       const [x, y] = radarPoint(cx, cy, radius, i, total, 1);
-      return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#e6dccb" stroke-width="1"/>`;
+      return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#E1DCCF" stroke-width="1"/>`;
     }).join("");
 
     const dataPts = DIM_ORDER.map((dim, i) => radarPoint(cx, cy, radius, i, total, Math.max(scores[dim], 4) / 100));
     const dataPoly = dataPts.map((p) => p.join(",")).join(" ");
     const dots = dataPts
-      .map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#b5502f"/>`)
+      .map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#D9794A"/>`)
       .join("");
 
     const labels = DIM_ORDER.map((dim, i) => {
-      const [x, y] = radarPoint(cx, cy, radius + 44, i, total, 1);
+      const [x, y] = radarPoint(cx, cy, radius + 30, i, total, 1);
       const anchor = x < cx - 4 ? "end" : x > cx + 4 ? "start" : "middle";
-      return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#6e6153" letter-spacing="0.2">${DIMS[dim].label.toUpperCase()}</text>`;
+      return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle" font-family="Poppins, sans-serif" font-weight="600" font-size="9.5" fill="#6B6A63" letter-spacing="0.1">${DIMS[dim].label.toUpperCase()}</text>`;
     }).join("");
 
     return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="Growth dimension pattern">
       ${ringPolys}${axisLines}
-      <polygon points="${dataPoly}" fill="#cf9c86" fill-opacity="0.35" stroke="#b5502f" stroke-width="2"/>
+      <polygon points="${dataPoly}" fill="#D9794A" fill-opacity="0.28" stroke="#D9794A" stroke-width="2.5"/>
       ${dots}${labels}
     </svg>`;
   }
@@ -122,12 +153,12 @@
     // Decorative hero mark: plain hexagon outline echoing the 6 dimensions,
     // with a small sprouting line — the recurring "growth print" signature.
     return `<svg width="86" height="86" viewBox="0 0 86 86" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="43,6 76,24.5 76,61.5 43,80 10,61.5 10,24.5" stroke="#b5502f" stroke-width="1.4"/>
-      <polygon points="43,22 62,33 62,55 43,66 24,55 24,33" stroke="#cf9c86" stroke-width="1.2"/>
-      <path d="M43 66 C 43 52, 43 46, 43 38" stroke="#6c7355" stroke-width="1.6" stroke-linecap="round"/>
-      <path d="M43 46 C 38 44, 35 40, 35 36" stroke="#6c7355" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-      <path d="M43 52 C 48 50, 51 46, 51 42" stroke="#6c7355" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-      <circle cx="43" cy="66" r="2.4" fill="#b5502f"/>
+      <polygon points="43,6 76,24.5 76,61.5 43,80 10,61.5 10,24.5" stroke="#D9794A" stroke-width="1.4"/>
+      <polygon points="43,22 62,33 62,55 43,66 24,55 24,33" stroke="#E6E2D8" stroke-width="1.2"/>
+      <path d="M43 66 C 43 52, 43 46, 43 38" stroke="#7C8A63" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M43 46 C 38 44, 35 40, 35 36" stroke="#7C8A63" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+      <path d="M43 52 C 48 50, 51 46, 51 42" stroke="#7C8A63" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+      <circle cx="43" cy="66" r="2.4" fill="#D9794A"/>
     </svg>`;
   }
 
@@ -185,52 +216,25 @@
       </div>`;
   }
 
-  /** ---------------- screen: contact gate ---------------- */
-  function screenGate() {
-    const c = COPY.contactGate;
-    const err = state.gateError;
-    const primary = state.result ? PROFILES[state.result.primary] : null;
+  /** ---------------- screen: contact form (agent or business) ---------------- */
+  function screenContactForm() {
+    const purpose = state.contactPurpose; // 'agent' | 'business'
+    const isAgent = purpose === "agent";
+    const agent = state.agent || DEFAULT_AGENT;
+    const c = COPY.contactForm;
+    const err = state.contactFormError;
+
+    const heading = isAgent ? COPY.agentInvite.ctaTemplate(agent.name) : COPY.businessInvite.cta;
+    const intro = isAgent ? COPY.agentInvite.formIntro : COPY.businessInvite.formIntro;
 
     return `
       <div class="screen">
-        <span class="eyebrow">${c.kicker}</span>
-        <h2 class="display" style="font-size:30px;margin:6px 0 4px;">${c.heading}</h2>
-        <p style="color:var(--ink-soft);font-size:15px;margin:0 0 4px;">${c.subheading}</p>
-        <p style="color:var(--ink-soft);font-size:14.5px;line-height:1.55;">${c.body}</p>
-
-        ${
-          primary
-            ? `
-        <div class="card" style="margin-top:18px;">
-          <span class="eyebrow">${c.previewEyebrow}</span>
-          <h2 class="display" style="font-size:24px;margin:8px 0 4px;">${primary.title}</h2>
-          <p style="font-style:italic;color:var(--ink-soft);margin:0 0 14px;">${primary.statement}</p>
-          <h3>${c.strengthsLabel}</h3>
-          ${primary.strengths.map((s) => `<p style="margin:0 0 4px;font-size:14.5px;">${s.title}</p>`).join("")}
-        </div>`
-            : ""
-        }
-
-        <div style="margin-top:22px;">
-          <h3 class="display" style="font-size:19px;margin:0 0 8px;">${c.deeperHeading}</h3>
-          <p style="color:var(--ink-soft);font-size:14.5px;margin:0 0 12px;">${c.deeperIntro}</p>
-        </div>
-
-        <div class="check-list">
-          ${c.deeperChecklist
-            .map(
-              (item) => `
-            <div class="check-item">
-              <span class="check">\u2713</span>
-              <span>${item}</span>
-            </div>`
-            )
-            .join("")}
-        </div>
+        <h2 class="display" style="font-size:26px;margin:6px 0 8px;">${heading}</h2>
+        <p style="color:var(--ink-soft);font-size:14.5px;line-height:1.55;margin-bottom:20px;">${intro}</p>
 
         ${err ? `<div class="error-banner">${err}</div>` : ""}
 
-        <form id="gate-form">
+        <form id="contact-form">
           <div class="field">
             <label>${c.fields.name}</label>
             <input type="text" name="name" autocomplete="name" placeholder="Nama lengkap" />
@@ -239,26 +243,11 @@
             <label>${c.fields.whatsapp}</label>
             <input type="tel" name="whatsapp" autocomplete="tel" placeholder="08123456789" />
           </div>
-          <div class="field">
-            <label>${c.fields.interest}</label>
-            <div class="radio-group">
-              ${c.interestOptions
-                .map(
-                  (opt) => `
-                <label class="radio-option">
-                  <input type="radio" name="interest" value="${opt}" />
-                  <span>${opt}</span>
-                </label>`
-                )
-                .join("")}
-            </div>
-          </div>
-          <p class="whatsapp-note">${c.whatsappNote}</p>
           <label class="consent">
             <input type="checkbox" name="consent" />
             <span>${c.consent}</span>
           </label>
-          <button type="submit" class="btn btn-primary btn-block">${c.cta}</button>
+          <button type="submit" class="btn btn-primary btn-block">${heading}</button>
         </form>
         <p class="notice">${c.notice}</p>
       </div>`;
@@ -287,24 +276,30 @@
   function screenResult() {
     const r = state.result;
     const primary = PROFILES[r.primary];
-    const secondary = PROFILES[r.secondary];
+    const supporting = PROFILES[r.supporting];
     const c = COPY.result;
-    const share = COPY.share;
-    const explore = COPY.explorePossibility;
-    const reflect = COPY.resultReflect;
+    const disc = COPY.resultDisclaimer;
+    const gi = COPY.growthIntent;
+    const combinationText = (COMBINATIONS[r.primary] && COMBINATIONS[r.primary][r.supporting]) || "";
 
     return `
       <div class="screen">
         <div class="result-header">
-          <span class="eyebrow">Your Career & Growth Profile</span>
-          <h2 class="display">${primary.title}</h2>
+          <span class="eyebrow">${r.isBlended ? c.blendedEyebrow : c.primaryEyebrow}</span>
+          <h2 class="display">${r.isBlended ? `${primary.title} \u00D7 ${supporting.title}` : primary.title}</h2>
           <p class="statement">${primary.statement}</p>
+          ${r.isBlended ? `<p class="blend-note">${c.blendNote}</p>` : ""}
         </div>
 
         <div class="radar-wrap">${renderRadar(r.dimensionScores)}</div>
 
+        <div class="card disclaimer-card">
+          <h3>${disc.title}</h3>
+          <p>${disc.body}</p>
+        </div>
+
         <div class="card">
-          <p>${primary.description}</p>
+          ${renderParagraphs(primary.description)}
         </div>
 
         <div class="card">
@@ -322,12 +317,13 @@
 
         <div class="card aware">
           <h3>${c.sectionLabels.awareOf}</h3>
-          <p>${primary.awareOf}</p>
+          ${renderParagraphs(primary.awareOf)}
         </div>
 
         <div class="card">
           <h3>${c.sectionLabels.nextOpportunity}</h3>
-          <p>${primary.nextOpportunity}</p>
+          <p class="tagline">${primary.nextOpportunityTagline}</p>
+          ${renderParagraphs(primary.nextOpportunity)}
         </div>
 
         <div class="card reflection">
@@ -335,35 +331,169 @@
           <p>${primary.reflectionQuestion}</p>
         </div>
 
-        <div class="secondary-pattern">
-          ${c.secondaryLabel}<br/>
-          <strong>${secondary.title}</strong> \u2014 ada pola ${secondary.title} yang juga cukup terlihat dalam jawabanmu.
-          <div style="margin-top:8px;font-style:italic;">${secondary.statement}</div>
+        <div class="card">
+          <h3>${c.sectionLabels.supporting}</h3>
+          <p class="supporting-title">${supporting.title}</p>
+          <p>${supporting.supportingDescription}</p>
         </div>
 
-        <div class="reflect-card">
-          <h3>${reflect.heading}</h3>
-          ${reflect.bodyParagraphs.map((p) => `<p>${p}</p>`).join("")}
-        </div>
+        ${
+          combinationText
+            ? `
+        <div class="card combination">
+          <h3>${c.sectionLabels.combination}</h3>
+          ${renderParagraphs(combinationText)}
+        </div>`
+            : ""
+        }
 
-        <div class="explore-card">
-          <span class="eyebrow">${explore.heading}</span>
-          <h2 class="display">${explore.headline}</h2>
-          <p>${explore.body}${explore.subBody ? `<br/><br/>${explore.subBody}` : ""}</p>
-          <button class="btn btn-primary" data-action="explore">${explore.cta}</button>
-        </div>
-
-        <div class="share-card">
-          <h3 class="display">${share.heading}</h3>
-          <p><strong style="display:block;color:var(--ink);margin-bottom:6px;">${share.subheading}</strong>${share.body}</p>
-          <button class="btn btn-primary" data-action="share">${share.cta}</button>
+        <div class="intent-section">
+          <h3 class="display">${gi.heading}</h3>
+          <p class="intent-sub">${gi.sub}</p>
+          <div class="intent-options">
+            ${gi.options
+              .map(
+                (opt) => `
+              <button class="intent-option${state.growthIntent === opt.id ? " selected" : ""}" data-action="select-intent" data-intent="${opt.id}">
+                <strong>${opt.label}</strong>
+                <span>${opt.description}</span>
+              </button>`
+              )
+              .join("")}
+          </div>
+          ${
+            state.growthIntent
+              ? `<button class="btn btn-primary btn-block" style="margin-top:16px;" data-action="go-next-steps">Lanjut \u2192</button>`
+              : ""
+          }
         </div>
 
         <footer class="byline">Career & Growth Check \u2014 self-reflection snapshot, bukan diagnosis psikologis.</footer>
       </div>`;
   }
 
+  /** ---------------- screen: share (grow_here intent) ---------------- */
+  function screenShare() {
+    const share = COPY.share;
+    return `
+      <div class="screen">
+        <div class="share-card" style="margin-top:12px;">
+          <h3 class="display">${share.heading}</h3>
+          <p><strong style="display:block;color:var(--ink);margin-bottom:6px;">${share.subheading}</strong>${share.body}</p>
+          <button class="btn btn-primary" data-action="share">${share.cta}</button>
+        </div>
+        <footer class="byline">Career & Growth Check \u2014 self-reflection snapshot, bukan diagnosis psikologis.</footer>
+      </div>`;
+  }
+
+  /** ---------------- screen: next steps (agent + business) ---------------- */
+  function screenNextSteps() {
+    const agentCopy = COPY.agentInvite;
+    const businessCopy = COPY.businessInvite;
+    const agent = state.agentInfo || DEFAULT_AGENT;
+    const showBusiness = state.growthIntent === "build_own";
+
+    return `
+      <div class="screen">
+        <div class="card agent-card">
+          <span class="eyebrow">${agentCopy.heading}</span>
+          <p>${agentCopy.body}</p>
+          <div class="agent-meet">
+            ${agent.photoUrl ? `<img class="agent-photo" src="${agent.photoUrl}" alt="${agent.name}" onerror="this.style.display='none'"/>` : ""}
+            <p class="agent-meet-label">${agentCopy.meetLabel(agent.name)}</p>
+            <p class="agent-why">${agent.whyRelevant}</p>
+          </div>
+          <p class="expectation-setting">${agentCopy.expectationSetting}</p>
+          <button class="btn btn-primary btn-block" data-action="cta-agent">${agentCopy.ctaTemplate(agent.name)}</button>
+        </div>
+
+        ${
+          showBusiness
+            ? `
+        <div class="card business-card">
+          <h3 class="display">${businessCopy.heading}</h3>
+          <p>${businessCopy.body}</p>
+          <button class="btn btn-primary btn-block" data-action="cta-business">${businessCopy.cta}</button>
+        </div>`
+            : ""
+        }
+
+        <footer class="byline">Career & Growth Check \u2014 self-reflection snapshot, bukan diagnosis psikologis.</footer>
+      </div>`;
+  }
+
+  /** ---------------- screen: contact confirmation ---------------- */
+  function screenContactSuccess() {
+    const c = COPY.contactSuccess;
+    return `
+      <div class="screen success-screen">
+        <div class="success-mark">\u2713</div>
+        <span class="eyebrow">${c.heading}</span>
+        <h2 class="display" style="font-size:26px;margin:2px 0 4px;">${c.subheading}</h2>
+        <p style="color:var(--ink-soft);font-size:14.5px;line-height:1.6;max-width:340px;">${c.body}</p>
+      </div>`;
+  }
+
   /** ---------------- screen: explore / event ---------------- */
+  function businessEventCard(ev) {
+    const isExpanded = state.expandedEventId === ev.id;
+    const err = isExpanded ? state.eventRegisterError : null;
+
+    return `
+      <div class="card event-card">
+        <p class="mono" style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">${COPY.event.label}</p>
+        <h2 class="display" style="font-size:22px;margin:2px 0 14px;">${ev.title || COPY.event.heading}</h2>
+        ${ev.imageUrl ? `<img class="event-flyer" src="${ev.imageUrl}" alt="${ev.title || ""}" onerror="this.style.display='none'"/>` : ""}
+        <p style="color:var(--ink-soft);font-size:14.5px;line-height:1.6;margin-bottom:18px;">${ev.description || COPY.event.body}</p>
+        <div class="event-meta">
+          ${ev.date ? `<div class="event-meta-row"><span class="k">Date</span><span>${ev.date}</span></div>` : ""}
+          ${ev.time ? `<div class="event-meta-row"><span class="k">Time</span><span>${ev.time}</span></div>` : ""}
+          ${ev.location ? `<div class="event-meta-row"><span class="k">Location</span><span>${ev.location}</span></div>` : ""}
+        </div>
+        ${err ? `<div class="error-banner">${err}</div>` : ""}
+        ${
+          isExpanded
+            ? `
+        <form class="inline-rsvp-form" data-event-id="${ev.id}">
+          <div class="field">
+            <label>Nama</label>
+            <input type="text" name="name" autocomplete="name" placeholder="Nama lengkap" />
+          </div>
+          <div class="field">
+            <label>WhatsApp</label>
+            <input type="tel" name="whatsapp" autocomplete="tel" placeholder="08123456789" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Reserve My Seat \u2192</button>
+        </form>`
+            : `<button class="btn btn-primary btn-block" data-action="expand-event" data-event-id="${ev.id}">${ev.ctaLabel || "Daftar"}</button>`
+        }
+      </div>`;
+  }
+
+  function screenBusinessEvents() {
+    const c = COPY.event;
+    const events = state.events;
+
+    if (!events || events.length === 0) {
+      return `
+        <div class="screen">
+          <div class="empty-state" style="margin-top:16vh;">
+            <span class="eyebrow">${c.eyebrow}</span>
+            <h3 class="display">${c.emptyState.heading}</h3>
+            <p>${c.emptyState.body}</p>
+            <button class="btn btn-ghost" style="margin-top:18px;" data-action="retry-event">${c.emptyState.retry}</button>
+          </div>
+        </div>`;
+    }
+
+    return `
+      <div class="screen">
+        <span class="eyebrow">${c.eyebrow}</span>
+        ${events.length > 1 ? `<p style="color:var(--ink-soft);font-size:14px;margin:8px 0 20px;">Ada ${events.length} kesempatan yang bisa kamu pilih.</p>` : ""}
+        ${events.map(businessEventCard).join("")}
+      </div>`;
+  }
+
   function screenEventLoading() {
     return `<div class="screen"><div class="loading-inline" style="margin-top:20vh;justify-content:center;"><span class="spinner"></span><span>Memuat kemungkinan berikutnya\u2026</span></div></div>`;
   }
@@ -437,71 +567,128 @@
   }
 
   /** ---------------- render dispatch ---------------- */
+  const NO_BACK_SCREENS = ["landing", "submitting", "eventLoading", "registering", "businessEvents"];
+
   function render() {
     const map = {
       landing: screenLanding,
       question: screenQuestion,
-      gate: screenGate,
+      contactForm: screenContactForm,
       submitting: screenSubmitting,
       submitError: screenSubmitError,
       result: screenResult,
+      nextSteps: screenNextSteps,
+      share: screenShare,
+      contactSuccess: screenContactSuccess,
+      businessEvents: screenBusinessEvents,
       eventLoading: screenEventLoading,
       event: screenEvent,
       registering: screenRegistering,
       rsvpSuccess: screenRsvpSuccess,
     };
     const fn = map[state.screen] || screenLanding;
-    root.innerHTML = fn();
+    let html = fn();
+    if (!NO_BACK_SCREENS.includes(state.screen) && history.length > 0) {
+      html = html.replace(
+        /(<div class="screen[^"]*">)/,
+        `$1<button class="back-btn" data-action="go-back" aria-label="Kembali">\u2190 Kembali</button>`
+      );
+    }
+    root.innerHTML = html;
   }
 
   /** ---------------- submission flow ---------------- */
-  async function submitAssessment() {
+  async function submitContact() {
     setState({ screen: "submitting" });
     const record = {
       timestamp: new Date().toISOString(),
       name: state.contact.name,
       whatsapp: state.contact.whatsapp,
-      interestFocus: state.contact.interestFocus,
+      growthIntent: state.growthIntent || "",
+      contactPurpose: state.contactPurpose || "",
       ref: window.Referral.get(),
       source: document.referrer || "direct",
       answers: state.answers,
       dimensionScores: state.result.dimensionScores,
       primaryProfile: state.result.primary,
-      secondaryPattern: state.result.secondary,
+      secondaryPattern: state.result.supporting,
       consent: true,
     };
     try {
       await window.SheetsClient.submitAssessment(record);
-      go("result", { finished: true });
+      go("contactSuccess", { finished: true });
     } catch (err) {
       setState({ screen: "submitError" });
     }
   }
 
-  async function loadEvents() {
-    setState({ screen: "eventLoading" });
-    const events = await window.SheetsClient.getActiveEvents();
-    setState({ events, screen: "event" });
+  /**
+   * Finds the Events row assigned to this visitor's ref (the private
+   * 1-on-1 session for their referring agent) and derives display info
+   * from it directly: title -> agent name, description -> why-relevant
+   * text, image_url -> photo, registration_url -> booking link.
+   * Falls back to DEFAULT_AGENT (generic, no photo/booking link) when
+   * nothing matches \u2014 e.g. no ref, or ref not yet configured in Sheets.
+   */
+  async function loadAgentInfo() {
+    const ref = (window.Referral.get() || "").trim().toLowerCase();
+    const allEvents = await window.SheetsClient.getActiveEvents();
+    const match = allEvents.find((e) => e.assignedRef && ref && String(e.assignedRef).trim().toLowerCase() === ref);
+    const agentInfo = match
+      ? {
+          name: match.title || DEFAULT_AGENT.name,
+          photoUrl: match.imageUrl || "",
+          whyRelevant: match.description || DEFAULT_AGENT.whyRelevant,
+          registrationUrl: match.registrationUrl || "",
+        }
+      : { ...DEFAULT_AGENT, registrationUrl: "" };
+    setState({ agentInfo });
   }
 
-  async function registerForEvent(ev) {
-    const contact = state.contact || {};
+  /**
+   * "Explore My Profile with [Agent]" — opens the matched event's
+   * registration_url directly (e.g. a Lynk.id/Calendly link) if we have
+   * one cached. Falls back to the internal contact form so the flow
+   * never dead-ends.
+   */
+  async function handleAgentCta() {
+    const info = state.agentInfo || DEFAULT_AGENT;
+    if (info.registrationUrl) {
+      window.SheetsClient.trackEvent("agent_booking_link_click");
+      window.open(info.registrationUrl, "_blank");
+    } else {
+      setState({ contactPurpose: "agent", contactFormError: null });
+      go("contactForm");
+    }
+  }
+
+  /** "Explore the Business Opportunity" — shows public (non-assigned) events. */
+  async function openBusinessEvents() {
+    setState({ screen: "eventLoading" });
+    const allEvents = await window.SheetsClient.getActiveEvents();
+    const events = allEvents.filter((e) => !e.assignedRef);
+    go("businessEvents", { events, expandedEventId: null });
+  }
+
+  async function registerForEvent(ev, name, whatsapp) {
+    const finalName = name || (state.contact && state.contact.name) || "";
+    const finalWhatsapp = whatsapp || (state.contact && state.contact.whatsapp) || "";
     setState({ selectedEvent: ev, screen: "registering", eventRegisterError: null });
 
     try {
       await window.SheetsClient.submitRsvp({
         timestamp: new Date().toISOString(),
-        name: contact.name || "",
-        whatsapp: contact.whatsapp || "",
+        name: finalName,
+        whatsapp: finalWhatsapp,
         ref: window.Referral.get(),
         eventName: ev ? ev.title : "",
         eventDate: ev ? ev.date : "",
         eventTime: ev ? ev.time : "",
-        consent: true, // consent already given when they submitted the assessment contact gate
+        consent: true,
       });
       go("rsvpSuccess", { finished: true });
     } catch (err) {
-      setState({ screen: "event", eventRegisterError: COPY.errors.submitFailed });
+      setState({ screen: "businessEvents", eventRegisterError: COPY.errors.submitFailed });
     }
   }
 
@@ -521,7 +708,13 @@
       const q = QUESTIONS[state.qIndex];
       setState({ answers: { ...state.answers, [q.id]: btn.dataset.option } });
     } else if (action === "back") {
-      setState({ qIndex: Math.max(0, state.qIndex - 1) });
+      if (state.qIndex === 0) {
+        goBack();
+      } else {
+        setState({ qIndex: Math.max(0, state.qIndex - 1) });
+      }
+    } else if (action === "go-back") {
+      goBack();
     } else if (action === "next") {
       const q = QUESTIONS[state.qIndex];
       if (!state.answers[q.id]) return; // guarded by disabled button too
@@ -529,15 +722,37 @@
         setState({ qIndex: state.qIndex + 1 });
       } else {
         const result = window.Scoring.scoreAssessment(state.answers);
-        setState({ result });
         if (!sessionStorage.getItem("cgc_tracked_quiz_complete")) {
           sessionStorage.setItem("cgc_tracked_quiz_complete", "1");
           window.SheetsClient.trackEvent("quiz_complete");
         }
-        go("gate");
+        // Full result is shown immediately — no contact info required.
+        go("result", { result });
       }
+    } else if (action === "select-intent") {
+      const intentId = btn.dataset.intent;
+      if (!sessionStorage.getItem(`cgc_tracked_intent_${intentId}`)) {
+        sessionStorage.setItem(`cgc_tracked_intent_${intentId}`, "1");
+        window.SheetsClient.trackEvent(`growth_intent:${intentId}`);
+      }
+      setState({ growthIntent: intentId });
+    } else if (action === "go-next-steps") {
+      // "Grow where I am" doesn't need Explore/Business — go straight to Share.
+      go(state.growthIntent === "grow_here" ? "share" : "nextSteps");
+    } else if (action === "cta-agent") {
+      if (!sessionStorage.getItem("cgc_tracked_cta_agent")) {
+        sessionStorage.setItem("cgc_tracked_cta_agent", "1");
+        window.SheetsClient.trackEvent("cta_agent_click");
+      }
+      handleAgentCta();
+    } else if (action === "cta-business") {
+      if (!sessionStorage.getItem("cgc_tracked_cta_business")) {
+        sessionStorage.setItem("cgc_tracked_cta_business", "1");
+        window.SheetsClient.trackEvent("cta_business_click");
+      }
+      openBusinessEvents();
     } else if (action === "retry-submit") {
-      submitAssessment();
+      submitContact();
     } else if (action === "share") {
       const url = window.Referral.buildShareUrl();
       const text = COPY.share.waMessageTemplate(url);
@@ -546,16 +761,12 @@
       } else {
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
       }
-    } else if (action === "explore") {
-      if (!sessionStorage.getItem("cgc_tracked_explore")) {
-        sessionStorage.setItem("cgc_tracked_explore", "1");
-        window.SheetsClient.trackEvent("explore_view");
-      }
-      loadEvents();
     } else if (action === "retry-event") {
-      loadEvents();
+      openBusinessEvents();
+    } else if (action === "expand-event") {
+      setState({ expandedEventId: btn.dataset.eventId, eventRegisterError: null });
     } else if (action === "open-external-booking") {
-      window.SheetsClient.trackEvent("event_register_external");
+      window.SheetsClient.trackEvent(btn.dataset.track === "agent" ? "agent_booking_link_click" : "event_register_external");
       window.open(btn.dataset.url, "_blank");
     } else if (action === "register-event") {
       const eventId = btn.dataset.eventId;
@@ -565,22 +776,35 @@
   });
 
   root.addEventListener("submit", (e) => {
-    if (e.target.id === "gate-form") {
+    if (e.target.id === "contact-form") {
       e.preventDefault();
       const fd = new FormData(e.target);
       const name = (fd.get("name") || "").toString().trim();
       const whatsapp = (fd.get("whatsapp") || "").toString().trim();
-      const interestFocus = (fd.get("interest") || "").toString().trim();
       const consent = fd.get("consent") === "on";
       const errs = COPY.errors;
 
-      if (!name) return setState({ gateError: errs.invalidName });
-      if (!isValidWhatsapp(whatsapp)) return setState({ gateError: errs.invalidWhatsapp });
-      if (!interestFocus) return setState({ gateError: errs.invalidInterest });
-      if (!consent) return setState({ gateError: errs.consentRequired });
+      if (!name) return setState({ contactFormError: errs.invalidName });
+      if (!isValidWhatsapp(whatsapp)) return setState({ contactFormError: errs.invalidWhatsapp });
+      if (!consent) return setState({ contactFormError: errs.consentRequired });
 
-      setState({ contact: { name, whatsapp, interestFocus }, gateError: null });
-      submitAssessment();
+      setState({ contact: { name, whatsapp }, contactFormError: null });
+      submitContact();
+    }
+
+    if (e.target.classList.contains("inline-rsvp-form")) {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const name = (fd.get("name") || "").toString().trim();
+      const whatsapp = (fd.get("whatsapp") || "").toString().trim();
+      const errs = COPY.errors;
+      const eventId = e.target.dataset.eventId;
+      const ev = (state.events || []).find((x) => String(x.id) === String(eventId));
+
+      if (!name) return setState({ eventRegisterError: errs.invalidName });
+      if (!isValidWhatsapp(whatsapp)) return setState({ eventRegisterError: errs.invalidWhatsapp });
+
+      registerForEvent(ev, name, whatsapp);
     }
   });
 
@@ -590,5 +814,9 @@
     sessionStorage.setItem("cgc_tracked_landing", "1");
     window.SheetsClient.trackEvent("landing_view");
   }
+  // Fire-and-forget: by the time the person reaches the result page (after
+  // 15 questions), this has almost always already resolved. If it hasn't,
+  // the agent card just shows DEFAULT_AGENT until it does, then re-renders.
+  loadAgentInfo();
   render();
 })();
