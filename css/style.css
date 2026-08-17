@@ -1,22 +1,23 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap");
 
 :root {
-  --bg: #f6f1e7;
-  --surface: #fffdf8;
-  --surface-raised: #ffffff;
-  --ink: #2a2118;
-  --ink-soft: #6e6153;
-  --rust: #b5502f;
-  --rust-dark: #8f3d22;
-  --olive: #6c7355;
-  --rose: #cf9c86;
-  --line: #e6dccb;
-  --line-soft: #efe7d8;
+  --bg: #F7F6F2;
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --ink: #1E1E1E;
+  --ink-soft: #6B6A63;
+  --rust: #D9794A;
+  --rust-dark: #B85F35;
+  --olive: #7C8A63;
+  --forest: #2E3A31;
+  --rose: #E6E2D8;
+  --line: #E1DCCF;
+  --line-soft: #EDEAE1;
   --radius-lg: 22px;
   --radius-md: 14px;
   --radius-sm: 9px;
-  --shadow-card: 0 12px 32px -18px rgba(42, 33, 24, 0.28);
-  --shadow-soft: 0 6px 18px -12px rgba(42, 33, 24, 0.22);
+  --shadow-card: 0 12px 32px -18px rgba(30, 30, 30, 0.24);
+  --shadow-soft: 0 6px 18px -12px rgba(30, 30, 30, 0.20);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -30,7 +31,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Poppins", -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
@@ -55,13 +56,13 @@ body::before {
 }
 
 .display {
-  font-family: "Fraunces", Georgia, serif;
-  font-optical-sizing: auto;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 800;
   letter-spacing: -0.01em;
 }
 
 .mono {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Poppins", sans-serif; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 
@@ -79,6 +80,21 @@ button { font-family: inherit; }
   animation: rise 0.5s var(--ease);
 }
 
+.back-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-family: "Poppins", sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 6px 0;
+  margin-bottom: 14px;
+  cursor: pointer;
+  order: -1;
+}
+.back-btn:hover { color: var(--ink); }
+
 @keyframes rise {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -87,7 +103,7 @@ button { font-family: inherit; }
 /* ---------- shared bits ---------- */
 
 .eyebrow {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Poppins", sans-serif; font-weight: 600; text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -97,7 +113,7 @@ button { font-family: inherit; }
 
 .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Poppins", sans-serif; font-weight: 500;
   font-size: 12px;
   color: var(--ink-soft);
   border: 1px solid var(--line);
@@ -118,7 +134,7 @@ button { font-family: inherit; }
 .btn:active { transform: scale(0.97); }
 .btn-primary {
   background: var(--rust);
-  color: #fff8f2;
+  color: #F7F6F2;
   box-shadow: var(--shadow-soft);
 }
 .btn-primary:hover { background: var(--rust-dark); }
@@ -135,7 +151,7 @@ button { font-family: inherit; }
 .field label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
 .field input,
 .field select {
-  font-family: "Inter", sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 16px;
   padding: 13px 15px;
   border-radius: var(--radius-sm);
@@ -193,7 +209,7 @@ button { font-family: inherit; }
 
 .qscreen { padding-top: 22px; }
 .progress-wrap { margin-bottom: 30px; }
-.progress-label { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft); margin-bottom: 10px; display: flex; justify-content: space-between; }
+.progress-label { font-family: "Poppins", sans-serif; font-weight: 600; text-transform: uppercase; font-size: 12px; color: var(--ink-soft); margin-bottom: 10px; display: flex; justify-content: space-between; }
 .progress-track { height: 4px; background: var(--line-soft); border-radius: 4px; overflow: hidden; }
 .progress-fill { height: 100%; background: linear-gradient(90deg, var(--rose), var(--rust)); border-radius: 4px; transition: width 0.45s var(--ease); }
 
@@ -229,12 +245,12 @@ button { font-family: inherit; }
 }
 .option-card.selected {
   border-color: var(--rust);
-  background: #fdf3ec;
+  background: #F7E7DA;
 }
 .option-card.selected .dot {
   border-color: var(--rust);
   background: var(--rust);
-  box-shadow: inset 0 0 0 3px #fdf3ec;
+  box-shadow: inset 0 0 0 3px #F7E7DA;
 }
 
 .qnav { display: flex; gap: 10px; margin-top: auto; }
@@ -283,7 +299,7 @@ button { font-family: inherit; }
   transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
 }
 .radio-option input { accent-color: var(--rust); width: 16px; height: 16px; flex-shrink: 0; }
-.radio-option:has(input:checked) { border-color: var(--rust); background: #fdf3ec; }
+.radio-option:has(input:checked) { border-color: var(--rust); background: #F7E7DA; }
 
 .whatsapp-note { font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin: 16px 0 14px; }
 
@@ -292,10 +308,10 @@ button { font-family: inherit; }
 .result-header { text-align: center; margin-bottom: 6px; }
 .result-header .eyebrow { display: block; margin-bottom: 10px; }
 .result-header h2 { font-size: clamp(28px, 6vw, 38px); margin: 0 0 8px; }
-.result-header .statement { color: var(--ink-soft); font-size: 16px; font-style: italic; font-family: "Fraunces", serif; }
+.result-header .statement { color: var(--ink-soft); font-size: 16px; font-weight: 500; font-family: "Playfair Display", serif; }
 
-.radar-wrap { display: flex; justify-content: center; margin: 22px 0 8px; }
-.radar-wrap svg { width: 100%; max-width: 300px; height: auto; }
+.radar-wrap { display: flex; justify-content: center; margin: 10px -20px 0; }
+.radar-wrap svg { width: calc(100% + 40px); max-width: 480px; height: auto; }
 
 .card {
   background: var(--surface-raised);
@@ -306,7 +322,7 @@ button { font-family: inherit; }
   margin-bottom: 18px;
 }
 .card h3 {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Poppins", sans-serif; font-weight: 600; text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -314,6 +330,49 @@ button { font-family: inherit; }
   margin: 0 0 14px;
 }
 .card p { font-size: 15px; line-height: 1.65; color: var(--ink); margin: 0; }
+.card p + p { margin-top: 12px; }
+
+.blend-note { font-size: 13.5px; color: var(--ink-soft); font-style: italic; max-width: 420px; margin: 8px auto 0; line-height: 1.5; }
+
+.disclaimer-card { background: #EDEAE1; box-shadow: none; }
+.disclaimer-card h3 { text-transform: none; font-family: "Playfair Display", serif; font-weight: 600; font-size: 15px; letter-spacing: 0; color: var(--ink); }
+.disclaimer-card p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; }
+
+.card .tagline { font-family: "Playfair Display", serif; font-weight: 600; font-size: 15.5px; color: var(--rust-dark); margin: 0 0 12px; }
+
+.supporting-title { font-family: "Playfair Display", serif; font-weight: 600; font-size: 19px; color: var(--ink); margin: 0 0 10px !important; }
+
+.card.combination { background: #EDEAE1; box-shadow: none; }
+
+.intent-section { margin: 6px 0 22px; }
+.intent-section h3 { font-size: 19px; margin: 0 0 8px; }
+.intent-sub { font-size: 14px; color: var(--ink-soft); line-height: 1.55; margin: 0 0 16px; }
+.intent-options { display: flex; flex-direction: column; gap: 10px; }
+.intent-option {
+  text-align: left;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.intent-option strong { display: block; font-size: 14.5px; margin-bottom: 3px; }
+.intent-option span { font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
+.intent-option:hover { border-color: var(--rose); }
+.intent-option.selected { border-color: var(--rust); background: #F7E7DA; }
+
+.agent-card .eyebrow { display: block; margin-bottom: 10px; }
+.agent-meet { background: #EDEAE1; border-radius: var(--radius-md); padding: 14px 16px; margin: 14px 0; }
+.agent-photo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; display: block; }
+.agent-meet-label { font-family: "Playfair Display", serif; font-weight: 600; font-size: 17px; margin: 0 0 6px !important; color: var(--ink); }
+.agent-background, .agent-why { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 6px !important; line-height: 1.5; }
+.agent-background:last-child, .agent-why:last-child { margin-bottom: 0 !important; }
+.expectation-setting { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; margin: 0 0 16px; font-style: italic; }
+
+.business-card { background: #EDEAE1; box-shadow: none; text-align: left; }
+.business-card h3.display { font-size: 19px; margin: 0 0 10px; }
+.business-card p { margin-bottom: 16px; }
 
 .strength-row { display: flex; gap: 12px; margin-bottom: 14px; }
 .strength-row:last-child { margin-bottom: 0; }
@@ -322,19 +381,8 @@ button { font-family: inherit; }
 .strength-row span { font-size: 14px; color: var(--ink-soft); line-height: 1.55; }
 
 .card.aware { border-left: 3px solid var(--rose); }
-.card.reflection { background: #f4efe1; box-shadow: none; }
-.card.reflection p { font-family: "Fraunces", serif; font-size: 17px; font-style: italic; }
-
-.secondary-pattern {
-  font-size: 13.5px;
-  color: var(--ink-soft);
-  text-align: center;
-  padding: 14px 10px;
-  border-top: 1px dashed var(--line);
-  border-bottom: 1px dashed var(--line);
-  margin: 6px 0 24px;
-}
-.secondary-pattern strong { color: var(--ink); }
+.card.reflection { background: #EDEAE1; box-shadow: none; }
+.card.reflection p { font-family: "Playfair Display", serif; font-weight: 500; font-size: 17px; }
 
 /* ---------- share ---------- */
 
@@ -360,7 +408,7 @@ button { font-family: inherit; }
   box-shadow: var(--shadow-card);
 }
 .reflect-card h3 {
-  font-family: "Fraunces", serif;
+  font-family: "Playfair Display", serif;
   font-size: 19px;
   font-weight: 600;
   color: var(--ink);
@@ -379,14 +427,14 @@ button { font-family: inherit; }
   padding: 30px 22px;
   border-radius: var(--radius-lg);
   background: linear-gradient(160deg, var(--rust) 0%, var(--rust-dark) 100%);
-  color: #fff8f2;
+  color: #F7F6F2;
   margin-top: 8px;
 }
-.explore-card .eyebrow { color: #ffe4d6; }
+.explore-card .eyebrow { color: #F0D9C8; }
 .explore-card h2 { font-size: clamp(22px, 5vw, 28px); margin: 10px 0 12px; }
-.explore-card p { color: #fbe9de; font-size: 14.5px; line-height: 1.6; margin: 0 0 22px; }
-.explore-card .btn-primary { background: #fff8f2; color: var(--rust-dark); }
-.explore-card .btn-primary:hover { background: #ffe4d6; }
+.explore-card p { color: #F5E4D6; font-size: 14.5px; line-height: 1.6; margin: 0 0 22px; }
+.explore-card .btn-primary { background: #F7F6F2; color: var(--rust-dark); }
+.explore-card .btn-primary:hover { background: #F0D9C8; }
 
 /* ---------- event ---------- */
 
@@ -405,7 +453,7 @@ button { font-family: inherit; }
 .event-meta-row .k { color: var(--ink-soft); min-width: 78px; flex-shrink: 0; }
 
 .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-soft); }
-.empty-state h3 { font-family: "Fraunces", serif; font-size: 20px; color: var(--ink); margin: 0 0 8px; }
+.empty-state h3 { font-family: "Montserrat", sans-serif; font-weight: 800; font-size: 20px; color: var(--ink); margin: 0 0 8px; }
 
 /* ---------- rsvp success ---------- */
 
