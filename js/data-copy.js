@@ -55,11 +55,12 @@ window.APP_COPY = {
 
   agentInvite: {
     heading: "EXPLORE YOUR GROWTH",
+    subheading: "Want to talk through your result?",
     body: "Your profile can give you a perspective. But sometimes a conversation with someone who has a different experience can help you see your situation from another angle.",
     meetLabel: (agentName) => `Meet ${agentName}`,
-    expectationSetting:
-      "This is not career counseling, a psychological assessment, or a session that determines what career you should choose. It\u2019s a casual conversation to reflect on your result, understand your current situation, and explore possibilities that may be relevant to you.",
+    expectationSetting: "This is a reflective conversation, not career counseling or psychological assessment.",
     ctaTemplate: (agentName) => `Explore My Profile with ${agentName}`,
+    submitCta: "Let\u2019s Talk \u2192",
     formIntro: "Isi data di bawah, dan kami akan menghubungimu lewat WhatsApp untuk mengatur waktu ngobrol.",
   },
 
@@ -77,7 +78,16 @@ window.APP_COPY = {
   },
 
   contactForm: {
-    fields: { name: "Nama", whatsapp: "WhatsApp" },
+    fields: {
+      name: "Nama",
+      whatsapp: "WhatsApp",
+      instagram: "Instagram",
+      mode: "Online atau Offline?",
+    },
+    modeOptions: {
+      online: "Online",
+      offline: "Offline (khusus area Jabodetabek)",
+    },
     consent: "Saya bersedia dihubungi melalui WhatsApp terkait hal ini.",
     notice: "Data digunakan untuk follow-up terkait Career & Growth Check. Tidak dibagikan ke pihak lain.",
   },
@@ -131,6 +141,7 @@ window.APP_COPY = {
     invalidWhatsapp: "Nomor WhatsApp sepertinya belum valid. Coba periksa lagi format nomornya (contoh: 08123456789).",
     invalidName: "Nama belum diisi.",
     consentRequired: "Kami perlu persetujuanmu sebelum melanjutkan.",
+    modeRequired: "Pilih Online atau Offline dulu, ya.",
     submitFailed: "Hasil kamu sudah lengkap, tapi ada gangguan saat menyimpan data. Yuk coba kirim sekali lagi \u2014 jawabanmu tidak hilang.",
     retry: "Coba lagi",
     networkGeneric: "Ada gangguan koneksi. Coba lagi sebentar lagi.",
