@@ -6,11 +6,11 @@
  */
 window.APP_COPY = {
   landing: {
-    eyebrow: "A 3-minute self-discovery",
-    headline: "What kind of growth fits you?",
+    eyebrow: "A self-reflection tool",
+    headline: "What\u2019s your next growth move?",
     description:
-      "15 pertanyaan singkat untuk melihat pola bagaimana kamu mengejar growth, menghadapi tantangan, belajar, berkembang bersama orang lain, dan melihat kemungkinan di depanmu.",
-    cta: "Mulai Career & Growth Check \u2192",
+      "Bukan tes psikologi, bukan tes karier. Ini refleksi singkat untuk melihat pola caramu berkembang \u2014 dan kemungkinan apa yang layak kamu jelajahi.",
+    cta: "Mulai Refleksi \u2192",
     chips: ["\u00B13 menit", "15 pertanyaan", "Gratis"],
     disclaimer:
       "Tidak ada jawaban benar atau salah. Pilih yang paling terasa seperti kamu \u2014 bukan jawaban yang menurutmu paling ideal. Ini adalah snapshot reflektif, bukan tes psikologis atau diagnosis.",
@@ -23,47 +23,63 @@ window.APP_COPY = {
     progressLabel: (n, total) => `Pertanyaan ${n} dari ${total}`,
   },
 
-  contactGate: {
-    kicker: "YOUR PROFILE IS READY",
-    heading: "Almost there",
-    subheading: "Dapatkan full Career & Growth Profile-mu.",
-    body: "Kamu sudah menyelesaikan assessment. Masukkan data di bawah untuk melihat hasil lengkapmu.",
-    previewEyebrow: "YOUR CAREER & GROWTH PROFILE",
-    strengthsLabel: "Natural Strengths",
-    deeperHeading: "Want to understand your profile deeper?",
-    deeperIntro: "Kami bisa bantu kamu melihat:",
-    deeperChecklist: [
-      "Bagaimana kekuatanmu bekerja",
-      "Blind spot yang mungkin menghambatmu",
-      "Area growth yang bisa kamu kembangkan selanjutnya",
-    ],
-    fields: {
-      name: "Nama",
-      whatsapp: "WhatsApp",
-      interest: "Apa yang paling ingin kamu pahami?",
-    },
-    interestOptions: [
-      "Kekuatan saya",
-      "Leadership potential saya",
-      "Karir apa yang mungkin cocok untuk saya",
-      "Apa yang menghambat growth saya",
-      "Saya masih eksplor dan ingin tahu lebih jauh",
-    ],
-    whatsappNote: "Kami menggunakan WhatsApp untuk mengirimkan hasil lengkap dan, jika kamu bersedia, membantu membahas hasil profile-mu secara personal.",
-    consent: "Saya bersedia dihubungi melalui WhatsApp terkait hasil profile dan informasi lanjutan yang relevan.",
-    cta: "See My Full Profile \u2192",
-    notice: "Data digunakan untuk menyimpan hasil profile dan follow-up terkait Career & Growth Check.",
+  resultDisclaimer: {
+    title: "A reflection, not a diagnosis.",
+    body: "Career & Growth Check is a self-reflection tool. Your result is not a psychological test, diagnosis, or a definitive career recommendation. Use it as a starting point to understand patterns in how you tend to grow, reflect on your current situation, and explore what might be next.",
   },
 
   result: {
-    secondaryLabel: "Your secondary pattern",
-    secondaryTemplate: (profileName) => `${profileName} \u2014 ada pola ${profileName} yang juga cukup terlihat dalam jawabanmu.`,
+    primaryEyebrow: "YOUR PRIMARY PATTERN",
+    blendedEyebrow: "YOUR GROWTH PATTERN",
+    blendNote: "Jawabanmu menunjukkan campuran yang cukup seimbang antara dua pola \u2014 ini bukan berarti kamu punya dua kepribadian berbeda, tapi caramu berkembang punya dua sisi yang sama-sama kuat.",
     sectionLabels: {
       strengths: "Natural Strengths",
       awareOf: "Something to Be Aware Of",
       nextOpportunity: "Your Next Growth Opportunity",
-      reflection: "Question Worth Exploring",
+      reflection: "A Question Worth Exploring",
+      supporting: "Your Supporting Pattern",
+      combination: "What This Might Mean Together",
     },
+  },
+
+  growthIntent: {
+    heading: "What feels most relevant to you right now?",
+    sub: "Hasil ini bukan untuk memberi tahu kamu harus memilih apa. Tapi mungkin ada beberapa kondisi yang bisa membantu kamu berkembang lebih jauh. Coba lihat mana yang paling terasa relevan dengan situasimu sekarang.",
+    options: [
+      { id: "grow_here", label: "Grow where I am", description: "Aku ingin mengembangkan diriku lebih jauh di lingkungan yang sekarang." },
+      { id: "explore_side", label: "Explore something on the side", description: "Aku penasaran dengan kemungkinan baru di luar aktivitas utamaku." },
+      { id: "build_own", label: "Build something of my own", description: "Aku tertarik melihat seperti apa rasanya membangun sesuatu milikku sendiri." },
+      { id: "still_figuring", label: "I\u2019m still figuring it out", description: "Aku belum tahu, dan aku masih ingin mengeksplorasi." },
+    ],
+  },
+
+  agentInvite: {
+    heading: "EXPLORE YOUR GROWTH",
+    body: "Your profile can give you a perspective. But sometimes a conversation with someone who has a different experience can help you see your situation from another angle.",
+    meetLabel: (agentName) => `Meet ${agentName}`,
+    expectationSetting:
+      "This is not career counseling, a psychological assessment, or a session that determines what career you should choose. It\u2019s a casual conversation to reflect on your result, understand your current situation, and explore possibilities that may be relevant to you.",
+    ctaTemplate: (agentName) => `Explore My Profile with ${agentName}`,
+    formIntro: "Isi data di bawah, dan kami akan menghubungimu lewat WhatsApp untuk mengatur waktu ngobrol.",
+  },
+
+  businessInvite: {
+    heading: "Curious about building something?",
+    body: "One possibility you can explore is building a business in financial services. If you\u2019re curious, you can learn how the business model works, what the journey can look like, and whether it could be relevant to what you\u2019re looking for.",
+    cta: "Explore the Business Opportunity",
+    formIntro: "Isi data di bawah, dan kami akan menghubungimu lewat WhatsApp untuk informasi lebih lanjut.",
+  },
+
+  contactSuccess: {
+    heading: "YOU'RE ALL SET",
+    subheading: "Terima kasih!",
+    body: "Kami akan menghubungimu lewat WhatsApp segera untuk melanjutkan percakapan ini.",
+  },
+
+  contactForm: {
+    fields: { name: "Nama", whatsapp: "WhatsApp" },
+    consent: "Saya bersedia dihubungi melalui WhatsApp terkait hal ini.",
+    notice: "Data digunakan untuk follow-up terkait Career & Growth Check. Tidak dibagikan ke pihak lain.",
   },
 
   share: {
@@ -73,22 +89,6 @@ window.APP_COPY = {
     cta: "Share Career & Growth Check \u2192",
     waMessageTemplate: (url) =>
       `Aku baru selesai isi Career & Growth Check \u2014 semacam refleksi singkat soal pola growth diri sendiri. Coba juga, cuma ${"\u00B13 menit"}: ${url}`,
-  },
-
-  resultReflect: {
-    heading: "So, what could this mean for you?",
-    bodyParagraphs: [
-      "Dari jawabanmu, ada beberapa pola yang terlihat tentang bagaimana kamu berkembang, apa yang mungkin membuatmu engaged, dan lingkungan seperti apa yang mungkin cocok untukmu.",
-      "Tapi self-discovery baru berguna kalau kita mulai melihat <strong>apa yang bisa kita lakukan dengan insight ini</strong>.",
-    ],
-  },
-
-  explorePossibility: {
-    heading: "ONE POSSIBILITY WORTH EXPLORING",
-    headline: "Want to explore this further?",
-    body: "Ada beberapa cara untuk melangkah dari sini \u2014 mulai dari ngobrol 1-on-1 sampai melihat langsung bagaimana sebuah business opportunity bekerja.",
-    subBody: "",
-    cta: "Explore What\u2019s Next \u2192",
   },
 
   event: {
@@ -130,7 +130,6 @@ window.APP_COPY = {
     missingAnswer: "Pilih salah satu jawaban dulu, ya, sebelum lanjut.",
     invalidWhatsapp: "Nomor WhatsApp sepertinya belum valid. Coba periksa lagi format nomornya (contoh: 08123456789).",
     invalidName: "Nama belum diisi.",
-    invalidInterest: "Pilih salah satu dulu, ya.",
     consentRequired: "Kami perlu persetujuanmu sebelum melanjutkan.",
     submitFailed: "Hasil kamu sudah lengkap, tapi ada gangguan saat menyimpan data. Yuk coba kirim sekali lagi \u2014 jawabanmu tidak hilang.",
     retry: "Coba lagi",
