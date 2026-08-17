@@ -436,7 +436,7 @@
 
   /** ---------------- screen: explore / event ---------------- */
   function businessEventCard(ev) {
-    const isExpanded = state.expandedEventId === ev.id;
+    const isExpanded = String(state.expandedEventId) === String(ev.id);
     const err = isExpanded ? state.eventRegisterError : null;
 
     return `
