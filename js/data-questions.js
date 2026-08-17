@@ -166,7 +166,7 @@ window.APP_QUESTIONS = [
     id: "q15",
     text: "Kalau satu tahun dari sekarang hidupmu berkembang jauh lebih baik dari sekarang, perubahan apa yang paling ingin kamu rasakan?",
     options: [
-      { id: "q15o1", text: "Aku lebih percaya diri karena berhasil mencapai hal-hal yang dulu terasa sulit.", dim: "R" },
+      { id: "q15o1", text: "Aku merasa lebih kuat dan lebih mampu bangkit ketika menghadapi kegagalan atau hal-hal yang sulit.", dim: "R" },
       { id: "q15o2", text: "Aku punya lebih banyak kebebasan dalam menentukan pilihan hidup dan pekerjaanku.", dim: "O" },
       { id: "q15o3", text: "Aku punya lingkungan dan orang-orang yang membuatku terus bertumbuh.", dim: "P" },
       { id: "q15o4", text: "Aku merasa apa yang kulakukan semakin memberi arti dan manfaat bagi orang lain.", dim: "V" },
