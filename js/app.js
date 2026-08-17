@@ -220,12 +220,13 @@
   function screenContactForm() {
     const purpose = state.contactPurpose; // 'agent' | 'business'
     const isAgent = purpose === "agent";
-    const agent = state.agent || DEFAULT_AGENT;
+    const agent = state.agentInfo || DEFAULT_AGENT;
     const c = COPY.contactForm;
     const err = state.contactFormError;
 
     const heading = isAgent ? COPY.agentInvite.ctaTemplate(agent.name) : COPY.businessInvite.cta;
     const intro = isAgent ? COPY.agentInvite.formIntro : COPY.businessInvite.formIntro;
+    const submitLabel = isAgent ? COPY.agentInvite.submitCta : heading;
 
     return `
       <div class="screen">
@@ -243,11 +244,33 @@
             <label>${c.fields.whatsapp}</label>
             <input type="tel" name="whatsapp" autocomplete="tel" placeholder="08123456789" />
           </div>
+          ${
+            isAgent
+              ? `
+          <div class="field">
+            <label>${c.fields.instagram}</label>
+            <input type="text" name="instagram" autocomplete="off" placeholder="@username" />
+          </div>
+          <div class="field">
+            <label>${c.fields.mode}</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="mode" value="online" />
+                <span>${c.modeOptions.online}</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="mode" value="offline" />
+                <span>${c.modeOptions.offline}</span>
+              </label>
+            </div>
+          </div>`
+              : ""
+          }
           <label class="consent">
             <input type="checkbox" name="consent" />
             <span>${c.consent}</span>
           </label>
-          <button type="submit" class="btn btn-primary btn-block">${heading}</button>
+          <button type="submit" class="btn btn-primary btn-block">${submitLabel}</button>
         </form>
         <p class="notice">${c.notice}</p>
       </div>`;
@@ -397,10 +420,12 @@
       <div class="screen">
         <div class="card agent-card">
           <span class="eyebrow">${agentCopy.heading}</span>
+          <h2 class="display agent-subheading">${agentCopy.subheading}</h2>
           <p>${agentCopy.body}</p>
           <div class="agent-meet">
             ${agent.photoUrl ? `<img class="agent-photo" src="${agent.photoUrl}" alt="${agent.name}" onerror="this.style.display='none'"/>` : ""}
             <p class="agent-meet-label">${agentCopy.meetLabel(agent.name)}</p>
+            ${agent.role ? `<p class="agent-role">${agent.role}</p>` : ""}
             <p class="agent-why">${agent.whyRelevant}</p>
           </div>
           <p class="expectation-setting">${agentCopy.expectationSetting}</p>
@@ -567,7 +592,7 @@
   }
 
   /** ---------------- render dispatch ---------------- */
-  const NO_BACK_SCREENS = ["landing", "submitting", "eventLoading", "registering", "businessEvents"];
+  const NO_BACK_SCREENS = ["landing", "submitting", "eventLoading", "registering", "businessEvents", "rsvpSuccess"];
 
   function render() {
     const map = {
@@ -604,8 +629,11 @@
       timestamp: new Date().toISOString(),
       name: state.contact.name,
       whatsapp: state.contact.whatsapp,
+      instagram: state.contact.instagram || "",
+      mode: state.contact.mode || "",
       growthIntent: state.growthIntent || "",
       contactPurpose: state.contactPurpose || "",
+      sessionId: window.SheetsClient.getSessionId(),
       ref: window.Referral.get(),
       source: document.referrer || "direct",
       answers: state.answers,
@@ -616,6 +644,15 @@
     };
     try {
       await window.SheetsClient.submitAssessment(record);
+      // Agent path + "Online" -> go straight to the agent's booking link.
+      // Everything else (Offline, or Business path) -> the completion screen.
+      if (state.contactPurpose === "agent" && state.contact.mode === "online") {
+        const url = (state.agentInfo && state.agentInfo.registrationUrl) || "";
+        if (url) {
+          window.location.href = url;
+          return;
+        }
+      }
       go("contactSuccess", { finished: true });
     } catch (err) {
       setState({ screen: "submitError" });
@@ -638,6 +675,7 @@
       ? {
           name: match.title || DEFAULT_AGENT.name,
           photoUrl: match.imageUrl || "",
+          role: match.role || DEFAULT_AGENT.role,
           whyRelevant: match.description || DEFAULT_AGENT.whyRelevant,
           registrationUrl: match.registrationUrl || "",
         }
@@ -651,17 +689,6 @@
    * one cached. Falls back to the internal contact form so the flow
    * never dead-ends.
    */
-  async function handleAgentCta() {
-    const info = state.agentInfo || DEFAULT_AGENT;
-    if (info.registrationUrl) {
-      window.SheetsClient.trackEvent("agent_booking_link_click");
-      window.open(info.registrationUrl, "_blank");
-    } else {
-      setState({ contactPurpose: "agent", contactFormError: null });
-      go("contactForm");
-    }
-  }
-
   /** "Explore the Business Opportunity" — shows public (non-assigned) events. */
   async function openBusinessEvents() {
     setState({ screen: "eventLoading" });
@@ -680,6 +707,7 @@
         timestamp: new Date().toISOString(),
         name: finalName,
         whatsapp: finalWhatsapp,
+        sessionId: window.SheetsClient.getSessionId(),
         ref: window.Referral.get(),
         eventName: ev ? ev.title : "",
         eventDate: ev ? ev.date : "",
@@ -725,6 +753,15 @@
         if (!sessionStorage.getItem("cgc_tracked_quiz_complete")) {
           sessionStorage.setItem("cgc_tracked_quiz_complete", "1");
           window.SheetsClient.trackEvent("quiz_complete");
+          window.SheetsClient.logAssessment({
+            timestamp: new Date().toISOString(),
+            ref: window.Referral.get(),
+            source: document.referrer || "direct",
+            answers: state.answers,
+            dimensionScores: result.dimensionScores,
+            primaryProfile: result.primary,
+            secondaryPattern: result.supporting,
+          });
         }
         // Full result is shown immediately — no contact info required.
         go("result", { result });
@@ -744,7 +781,8 @@
         sessionStorage.setItem("cgc_tracked_cta_agent", "1");
         window.SheetsClient.trackEvent("cta_agent_click");
       }
-      handleAgentCta();
+      setState({ contactPurpose: "agent", contactFormError: null });
+      go("contactForm");
     } else if (action === "cta-business") {
       if (!sessionStorage.getItem("cgc_tracked_cta_business")) {
         sessionStorage.setItem("cgc_tracked_cta_business", "1");
@@ -782,13 +820,17 @@
       const name = (fd.get("name") || "").toString().trim();
       const whatsapp = (fd.get("whatsapp") || "").toString().trim();
       const consent = fd.get("consent") === "on";
+      const isAgent = state.contactPurpose === "agent";
+      const instagram = isAgent ? (fd.get("instagram") || "").toString().trim() : "";
+      const mode = isAgent ? (fd.get("mode") || "").toString().trim() : "";
       const errs = COPY.errors;
 
       if (!name) return setState({ contactFormError: errs.invalidName });
       if (!isValidWhatsapp(whatsapp)) return setState({ contactFormError: errs.invalidWhatsapp });
+      if (isAgent && !mode) return setState({ contactFormError: errs.modeRequired });
       if (!consent) return setState({ contactFormError: errs.consentRequired });
 
-      setState({ contact: { name, whatsapp }, contactFormError: null });
+      setState({ contact: { name, whatsapp, instagram, mode }, contactFormError: null });
       submitContact();
     }
 
