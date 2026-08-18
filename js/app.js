@@ -295,9 +295,12 @@
             : ""
         }
 
+        <button class="btn btn-ghost btn-block download-pdf-btn no-print" data-action="download-pdf">\u2B07\uFE0F Download Hasil (PDF)</button>
+
         <div class="intent-section">
           <h3 class="display">${gi.heading}</h3>
           <p class="intent-sub">${gi.sub}</p>
+          <p class="intent-instruction">${gi.instruction}</p>
           <div class="intent-options">
             ${gi.options
               .map(
@@ -463,7 +466,7 @@
   }
 
   /** ---------------- render dispatch ---------------- */
-  const NO_BACK_SCREENS = ["landing", "eventLoading", "registering", "businessEvents", "rsvpSuccess"];
+  const NO_BACK_SCREENS = ["landing", "eventLoading", "registering", "rsvpSuccess"];
 
   function render() {
     const map = {
@@ -591,6 +594,9 @@
         window.SheetsClient.trackEvent(`explore_events:${state.growthIntent}`);
       }
       openEventsForIntent(state.growthIntent);
+    } else if (action === "download-pdf") {
+      window.SheetsClient.trackEvent("download_pdf_click");
+      window.print();
     } else if (action === "share") {
       const url = window.Referral.buildShareUrl();
       const text = COPY.share.waMessageTemplate(url);
