@@ -304,8 +304,8 @@
               .map(
                 (opt) => `
               <button class="intent-option${state.growthIntent === opt.id ? " selected" : ""}" data-action="select-intent" data-intent="${opt.id}">
-                <strong>${opt.label}</strong>
-                <span>${opt.description}</span>
+                <span class="dot"></span>
+                <div><strong>${opt.label}</strong><span>${opt.description}</span></div>
               </button>`
               )
               .join("")}
