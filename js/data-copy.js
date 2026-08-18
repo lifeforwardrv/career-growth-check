@@ -45,6 +45,7 @@ window.APP_COPY = {
   growthIntent: {
     heading: "What feels most relevant to you right now?",
     sub: "Hasil ini bukan untuk memberi tahu kamu harus memilih apa. Tapi mungkin ada beberapa kondisi yang bisa membantu kamu berkembang lebih jauh. Coba lihat mana yang paling terasa relevan dengan situasimu sekarang.",
+    instruction: "\u261D\uFE0F Pilih salah satu di bawah ini untuk melanjutkan \u2014 assessment kamu belum selesai sampai di sini.",
     options: [
       { id: "grow_here", label: "Grow where I am", description: "Aku ingin mengembangkan diriku lebih jauh di lingkungan yang sekarang." },
       { id: "explore_side", label: "Explore something on the side", description: "Aku penasaran dengan kemungkinan baru di luar aktivitas utamaku." },
