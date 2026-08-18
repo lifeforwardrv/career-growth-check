@@ -295,8 +295,6 @@
             : ""
         }
 
-        <button class="btn btn-ghost btn-block download-pdf-btn no-print" data-action="download-pdf">\u2B07\uFE0F Download Hasil (PDF)</button>
-
         <div class="intent-section">
           <h3 class="display">${gi.heading}</h3>
           <p class="intent-sub">${gi.sub}</p>
@@ -312,12 +310,10 @@
               )
               .join("")}
           </div>
-          ${
-            state.growthIntent
-              ? `<button class="btn btn-primary btn-block" style="margin-top:16px;" data-action="go-next-steps">Lanjut \u2192</button>`
-              : ""
-          }
+          <button class="btn btn-primary btn-block" style="margin-top:16px;" data-action="go-next-steps" ${!state.growthIntent ? "disabled" : ""}>Lanjut \u2192</button>
         </div>
+
+        <button class="btn btn-ghost btn-block download-pdf-btn no-print" data-action="download-pdf">\u2B07\uFE0F Download Hasil (PDF)</button>
 
         <footer class="byline">Career & Growth Check \u2014 self-reflection snapshot, bukan diagnosis psikologis.</footer>
       </div>`;
@@ -498,11 +494,14 @@
    * the person's growth-intent choice (see INTENT_CATEGORIES).
    */
   async function openEventsForIntent(intent) {
+    if (state.screen !== "eventLoading" && !TRANSIENT_SCREENS.includes(state.screen)) {
+      history.push(state.screen);
+    }
     setState({ screen: "eventLoading" });
     const allEvents = await window.SheetsClient.getActiveEvents();
     const categories = INTENT_CATEGORIES[intent] || [];
     const events = allEvents.filter((e) => categories.includes(String(e.category || "").trim().toLowerCase()));
-    go("businessEvents", { events, expandedEventId: null });
+    setState({ screen: "businessEvents", events, expandedEventId: null });
   }
 
   async function registerForEvent(ev, name, whatsapp, instagram) {
