@@ -346,7 +346,17 @@ button { font-family: inherit; }
 
 .intent-section { margin: 6px 0 22px; }
 .intent-section h3 { font-size: 19px; margin: 0 0 8px; }
-.intent-sub { font-size: 14px; color: var(--ink-soft); line-height: 1.55; margin: 0 0 16px; }
+.intent-sub { font-size: 14px; color: var(--ink-soft); line-height: 1.55; margin: 0 0 12px; }
+.intent-instruction {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rust-dark);
+  background: #F7E7DA;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
 .intent-options { display: flex; flex-direction: column; gap: 10px; }
 .intent-option {
   text-align: left;
@@ -488,4 +498,29 @@ footer.byline {
 
 @media (min-width: 720px) {
   .screen { padding-top: 48px; }
+}
+
+/* ---------- download-as-PDF button ---------- */
+
+.download-pdf-btn {
+  margin: 4px 0 22px;
+  font-size: 14px;
+}
+
+/* ---------- print stylesheet (used by the "Download PDF" button) ---------- */
+
+@media print {
+  .back-btn,
+  .no-print,
+  .intent-section,
+  .share-card,
+  footer.byline,
+  .btn {
+    display: none !important;
+  }
+  body { background: #fff; }
+  body::before { display: none; }
+  .screen { max-width: 100%; padding: 0; }
+  .card, .result-header { box-shadow: none !important; border: 1px solid #ddd; break-inside: avoid; }
+  .radar-wrap svg { max-width: 320px; }
 }
