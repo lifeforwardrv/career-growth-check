@@ -108,19 +108,24 @@ window.SheetsClient = (function () {
    * the UI and never throws \u2014 a failed ping just means one missing data
    * point in the Funnel Summary sheet, nothing the person notices.
    */
+  /** Shared session id, generated once per browser tab session. */
+  function getSessionId() {
+    let sessionId = sessionStorage.getItem("cgc_session_id");
+    if (!sessionId) {
+      sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random();
+      sessionStorage.setItem("cgc_session_id", sessionId);
+    }
+    return sessionId;
+  }
+
   function trackEvent(eventName) {
     if (!isConfigured()) return;
     try {
-      let sessionId = sessionStorage.getItem("cgc_session_id");
-      if (!sessionId) {
-        sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random();
-        sessionStorage.setItem("cgc_session_id", sessionId);
-      }
       const payload = JSON.stringify({
         action: "track",
         timestamp: new Date().toISOString(),
         event: eventName,
-        sessionId,
+        sessionId: getSessionId(),
         ref: (window.Referral && window.Referral.get()) || "",
         source: document.referrer || "direct",
       });
@@ -135,5 +140,29 @@ window.SheetsClient = (function () {
     }
   }
 
-  return { isConfigured, submitAssessment, submitRsvp, getActiveEvents, trackEvent };
+  /**
+   * Logs a completed assessment (answers + scores + primary/supporting
+   * pattern) as soon as the person sees their result — before any
+   * contact info is collected. Fire-and-forget, same as trackEvent.
+   */
+  function logAssessment(record) {
+    if (!isConfigured()) return;
+    try {
+      const payload = JSON.stringify({
+        action: "logAssessment",
+        sessionId: getSessionId(),
+        ...record,
+      });
+      fetch(window.APP_CONFIG.API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    } catch (err) {
+      /* non-fatal */
+    }
+  }
+
+  return { isConfigured, submitAssessment, submitRsvp, getActiveEvents, trackEvent, logAssessment, getSessionId };
 })();
