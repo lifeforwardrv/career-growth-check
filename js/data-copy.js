@@ -53,45 +53,6 @@ window.APP_COPY = {
     ],
   },
 
-  agentInvite: {
-    heading: "EXPLORE YOUR GROWTH",
-    subheading: "Want to talk through your result?",
-    body: "Your profile can give you a perspective. But sometimes a conversation with someone who has a different experience can help you see your situation from another angle.",
-    meetLabel: (agentName) => `Meet ${agentName}`,
-    expectationSetting: "This is a reflective conversation, not career counseling or psychological assessment.",
-    ctaTemplate: (agentName) => `Explore My Profile with ${agentName}`,
-    submitCta: "Let\u2019s Talk \u2192",
-    formIntro: "Isi data di bawah, dan kami akan menghubungimu lewat WhatsApp untuk mengatur waktu ngobrol.",
-  },
-
-  businessInvite: {
-    heading: "Curious about building something?",
-    body: "One possibility you can explore is building a business in financial services. If you\u2019re curious, you can learn how the business model works, what the journey can look like, and whether it could be relevant to what you\u2019re looking for.",
-    cta: "Explore the Business Opportunity",
-    formIntro: "Isi data di bawah, dan kami akan menghubungimu lewat WhatsApp untuk informasi lebih lanjut.",
-  },
-
-  contactSuccess: {
-    heading: "YOU'RE ALL SET",
-    subheading: "Terima kasih!",
-    body: "Kami akan menghubungimu lewat WhatsApp segera untuk melanjutkan percakapan ini.",
-  },
-
-  contactForm: {
-    fields: {
-      name: "Nama",
-      whatsapp: "WhatsApp",
-      instagram: "Instagram",
-      mode: "Online atau Offline?",
-    },
-    modeOptions: {
-      online: "Online",
-      offline: "Offline (khusus area Jabodetabek)",
-    },
-    consent: "Saya bersedia dihubungi melalui WhatsApp terkait hal ini.",
-    notice: "Data digunakan untuk follow-up terkait Career & Growth Check. Tidak dibagikan ke pihak lain.",
-  },
-
   share: {
     heading: "SHARE",
     subheading: "Kenal seseorang yang mungkin penasaran dengan profile-nya?",
@@ -140,8 +101,8 @@ window.APP_COPY = {
     missingAnswer: "Pilih salah satu jawaban dulu, ya, sebelum lanjut.",
     invalidWhatsapp: "Nomor WhatsApp sepertinya belum valid. Coba periksa lagi format nomornya (contoh: 08123456789).",
     invalidName: "Nama belum diisi.",
+    invalidInstagram: "Instagram belum diisi.",
     consentRequired: "Kami perlu persetujuanmu sebelum melanjutkan.",
-    modeRequired: "Pilih Online atau Offline dulu, ya.",
     submitFailed: "Hasil kamu sudah lengkap, tapi ada gangguan saat menyimpan data. Yuk coba kirim sekali lagi \u2014 jawabanmu tidak hilang.",
     retry: "Coba lagi",
     networkGeneric: "Ada gangguan koneksi. Coba lagi sebentar lagi.",
