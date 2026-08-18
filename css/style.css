@@ -365,12 +365,27 @@ button { font-family: inherit; }
   border-radius: var(--radius-md);
   padding: 14px 16px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease), transform 0.12s var(--ease);
+}
+.intent-option .dot {
+  flex-shrink: 0;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
   transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
 }
 .intent-option strong { display: block; font-size: 14.5px; margin-bottom: 3px; }
 .intent-option span { font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
-.intent-option:hover { border-color: var(--rose); }
+.intent-option:hover { border-color: var(--rose); transform: translateX(2px); }
 .intent-option.selected { border-color: var(--rust); background: #F7E7DA; }
+.intent-option.selected .dot {
+  border-color: var(--rust);
+  background: var(--rust);
+  box-shadow: inset 0 0 0 3px #F7E7DA;
+}
 
 .agent-card .eyebrow { display: block; margin-bottom: 6px; }
 .agent-subheading { font-size: 22px; margin: 0 0 14px; line-height: 1.25; }
