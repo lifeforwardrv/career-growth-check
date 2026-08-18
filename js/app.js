@@ -15,17 +15,22 @@
   const DIM_ORDER = window.APP_DIMENSION_ORDER;
   const PROFILES = window.APP_PROFILES;
   const COMBINATIONS = window.APP_COMBINATIONS;
-  const DEFAULT_AGENT = window.APP_DEFAULT_AGENT;
 
   const SESSION_KEY = "cgc_session_v1";
+
+  // Which event category(ies) to show for each growth-intent choice.
+  const INTENT_CATEGORIES = {
+    grow_here: ["class"],
+    explore_side: ["nbo"],
+    build_own: ["nbo"],
+    still_figuring: ["class", "nbo"],
+  };
 
   /** ---------------- state ---------------- */
   let state = restoreSession() || {
     screen: "landing",
     qIndex: 0,
     answers: {}, // { questionId: optionId }
-    contact: null, // { name, whatsapp } — only collected once a CTA is clicked
-    contactPurpose: null, // 'agent' | 'business' — which CTA triggered the contact form
     growthIntent: null, // one of growthIntent.options[].id — self-reflection, not a gate
     result: null, // computed by scoreAssessment (available immediately after Q15, no contact needed)
     submission: { status: "idle", error: null }, // idle | pending | done | error
@@ -33,8 +38,7 @@
     selectedEvent: null, // the event the person clicked "Reserve My Seat" on
     rsvp: { status: "idle", error: null },
     finished: false, // once true, the session is no longer persisted — a refresh starts fresh at landing
-    agentInfo: null, // { name, photoUrl, whyRelevant, registrationUrl } sourced from the matching Events row; falls back to DEFAULT_AGENT
-    expandedEventId: null, // which business-event card currently has its inline RSVP form open
+    expandedEventId: null, // which event card currently has its inline RSVP form open
   };
 
   function saveSession() {
@@ -74,7 +78,7 @@
 
   // Screens that should never appear as a back-target (transient/loading —
   // landing on the way back to one of these would be confusing).
-  const TRANSIENT_SCREENS = ["submitting", "eventLoading", "registering"];
+  const TRANSIENT_SCREENS = ["eventLoading", "registering"];
 
   function go(screen, extra) {
     if (state.screen !== screen && !TRANSIENT_SCREENS.includes(state.screen)) {
@@ -216,85 +220,6 @@
       </div>`;
   }
 
-  /** ---------------- screen: contact form (agent or business) ---------------- */
-  function screenContactForm() {
-    const purpose = state.contactPurpose; // 'agent' | 'business'
-    const isAgent = purpose === "agent";
-    const agent = state.agentInfo || DEFAULT_AGENT;
-    const c = COPY.contactForm;
-    const err = state.contactFormError;
-
-    const heading = isAgent ? COPY.agentInvite.ctaTemplate(agent.name) : COPY.businessInvite.cta;
-    const intro = isAgent ? COPY.agentInvite.formIntro : COPY.businessInvite.formIntro;
-    const submitLabel = isAgent ? COPY.agentInvite.submitCta : heading;
-
-    return `
-      <div class="screen">
-        <h2 class="display" style="font-size:26px;margin:6px 0 8px;">${heading}</h2>
-        <p style="color:var(--ink-soft);font-size:14.5px;line-height:1.55;margin-bottom:20px;">${intro}</p>
-
-        ${err ? `<div class="error-banner">${err}</div>` : ""}
-
-        <form id="contact-form">
-          <div class="field">
-            <label>${c.fields.name}</label>
-            <input type="text" name="name" autocomplete="name" placeholder="Nama lengkap" />
-          </div>
-          <div class="field">
-            <label>${c.fields.whatsapp}</label>
-            <input type="tel" name="whatsapp" autocomplete="tel" placeholder="08123456789" />
-          </div>
-          ${
-            isAgent
-              ? `
-          <div class="field">
-            <label>${c.fields.instagram}</label>
-            <input type="text" name="instagram" autocomplete="off" placeholder="@username" />
-          </div>
-          <div class="field">
-            <label>${c.fields.mode}</label>
-            <div class="radio-group">
-              <label class="radio-option">
-                <input type="radio" name="mode" value="online" />
-                <span>${c.modeOptions.online}</span>
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="mode" value="offline" />
-                <span>${c.modeOptions.offline}</span>
-              </label>
-            </div>
-          </div>`
-              : ""
-          }
-          <label class="consent">
-            <input type="checkbox" name="consent" />
-            <span>${c.consent}</span>
-          </label>
-          <button type="submit" class="btn btn-primary btn-block">${submitLabel}</button>
-        </form>
-        <p class="notice">${c.notice}</p>
-      </div>`;
-  }
-
-  /** ---------------- screen: submitting ---------------- */
-  function screenSubmitting() {
-    return `
-      <div class="screen">
-        <div class="loading-inline" style="margin-top:40vh;justify-content:center;">
-          <span class="spinner"></span><span>Menyimpan hasilmu\u2026</span>
-        </div>
-      </div>`;
-  }
-
-  function screenSubmitError() {
-    const e = COPY.errors;
-    return `
-      <div class="screen">
-        <div class="error-banner" style="margin-top:30vh;">${e.submitFailed}</div>
-        <button class="btn btn-primary btn-block" data-action="retry-submit">${e.retry}</button>
-      </div>`;
-  }
-
   /** ---------------- screen: result ---------------- */
   function screenResult() {
     const r = state.result;
@@ -395,70 +320,6 @@
       </div>`;
   }
 
-  /** ---------------- screen: share (grow_here intent) ---------------- */
-  function screenShare() {
-    const share = COPY.share;
-    return `
-      <div class="screen">
-        <div class="share-card" style="margin-top:12px;">
-          <h3 class="display">${share.heading}</h3>
-          <p><strong style="display:block;color:var(--ink);margin-bottom:6px;">${share.subheading}</strong>${share.body}</p>
-          <button class="btn btn-primary" data-action="share">${share.cta}</button>
-        </div>
-        <footer class="byline">Career & Growth Check \u2014 self-reflection snapshot, bukan diagnosis psikologis.</footer>
-      </div>`;
-  }
-
-  /** ---------------- screen: next steps (agent + business) ---------------- */
-  function screenNextSteps() {
-    const agentCopy = COPY.agentInvite;
-    const businessCopy = COPY.businessInvite;
-    const agent = state.agentInfo || DEFAULT_AGENT;
-    const showBusiness = state.growthIntent === "build_own";
-
-    return `
-      <div class="screen">
-        <div class="card agent-card">
-          <span class="eyebrow">${agentCopy.heading}</span>
-          <h2 class="display agent-subheading">${agentCopy.subheading}</h2>
-          <p>${agentCopy.body}</p>
-          <div class="agent-meet">
-            ${agent.photoUrl ? `<img class="agent-photo" src="${agent.photoUrl}" alt="${agent.name}" onerror="this.style.display='none'"/>` : ""}
-            <p class="agent-meet-label">${agentCopy.meetLabel(agent.name)}</p>
-            ${agent.role ? `<p class="agent-role">${agent.role}</p>` : ""}
-            <p class="agent-why">${agent.whyRelevant}</p>
-          </div>
-          <p class="expectation-setting">${agentCopy.expectationSetting}</p>
-          <button class="btn btn-primary btn-block" data-action="cta-agent">${agentCopy.ctaTemplate(agent.name)}</button>
-        </div>
-
-        ${
-          showBusiness
-            ? `
-        <div class="card business-card">
-          <h3 class="display">${businessCopy.heading}</h3>
-          <p>${businessCopy.body}</p>
-          <button class="btn btn-primary btn-block" data-action="cta-business">${businessCopy.cta}</button>
-        </div>`
-            : ""
-        }
-
-        <footer class="byline">Career & Growth Check \u2014 self-reflection snapshot, bukan diagnosis psikologis.</footer>
-      </div>`;
-  }
-
-  /** ---------------- screen: contact confirmation ---------------- */
-  function screenContactSuccess() {
-    const c = COPY.contactSuccess;
-    return `
-      <div class="screen success-screen">
-        <div class="success-mark">\u2713</div>
-        <span class="eyebrow">${c.heading}</span>
-        <h2 class="display" style="font-size:26px;margin:2px 0 4px;">${c.subheading}</h2>
-        <p style="color:var(--ink-soft);font-size:14.5px;line-height:1.6;max-width:340px;">${c.body}</p>
-      </div>`;
-  }
-
   /** ---------------- screen: explore / event ---------------- */
   function businessEventCard(ev) {
     const isExpanded = String(state.expandedEventId) === String(ev.id);
@@ -488,6 +349,10 @@
             <label>WhatsApp</label>
             <input type="tel" name="whatsapp" autocomplete="tel" placeholder="08123456789" />
           </div>
+          <div class="field">
+            <label>Instagram</label>
+            <input type="text" name="instagram" autocomplete="off" placeholder="@username" />
+          </div>
           <button type="submit" class="btn btn-primary btn-block">Reserve My Seat \u2192</button>
         </form>`
             : `<button class="btn btn-primary btn-block" data-action="expand-event" data-event-id="${ev.id}">${ev.ctaLabel || "Daftar"}</button>`
@@ -516,6 +381,12 @@
         <span class="eyebrow">${c.eyebrow}</span>
         ${events.length > 1 ? `<p style="color:var(--ink-soft);font-size:14px;margin:8px 0 20px;">Ada ${events.length} kesempatan yang bisa kamu pilih.</p>` : ""}
         ${events.map(businessEventCard).join("")}
+
+        <div class="share-card">
+          <h3 class="display">${COPY.share.heading}</h3>
+          <p><strong style="display:block;color:var(--ink);margin-bottom:6px;">${COPY.share.subheading}</strong>${COPY.share.body}</p>
+          <button class="btn btn-primary" data-action="share">${COPY.share.cta}</button>
+        </div>
       </div>`;
   }
 
@@ -592,19 +463,13 @@
   }
 
   /** ---------------- render dispatch ---------------- */
-  const NO_BACK_SCREENS = ["landing", "submitting", "eventLoading", "registering", "businessEvents", "rsvpSuccess"];
+  const NO_BACK_SCREENS = ["landing", "eventLoading", "registering", "businessEvents", "rsvpSuccess"];
 
   function render() {
     const map = {
       landing: screenLanding,
       question: screenQuestion,
-      contactForm: screenContactForm,
-      submitting: screenSubmitting,
-      submitError: screenSubmitError,
       result: screenResult,
-      nextSteps: screenNextSteps,
-      share: screenShare,
-      contactSuccess: screenContactSuccess,
       businessEvents: screenBusinessEvents,
       eventLoading: screenEventLoading,
       event: screenEvent,
@@ -623,90 +488,29 @@
   }
 
   /** ---------------- submission flow ---------------- */
-  async function submitContact() {
-    setState({ screen: "submitting" });
-    const record = {
-      timestamp: new Date().toISOString(),
-      name: state.contact.name,
-      whatsapp: state.contact.whatsapp,
-      instagram: state.contact.instagram || "",
-      mode: state.contact.mode || "",
-      growthIntent: state.growthIntent || "",
-      contactPurpose: state.contactPurpose || "",
-      sessionId: window.SheetsClient.getSessionId(),
-      ref: window.Referral.get(),
-      source: document.referrer || "direct",
-      answers: state.answers,
-      dimensionScores: state.result.dimensionScores,
-      primaryProfile: state.result.primary,
-      secondaryPattern: state.result.supporting,
-      consent: true,
-    };
-    try {
-      await window.SheetsClient.submitAssessment(record);
-      // Agent path + "Online" -> go straight to the agent's booking link.
-      // Everything else (Offline, or Business path) -> the completion screen.
-      if (state.contactPurpose === "agent" && state.contact.mode === "online") {
-        const url = (state.agentInfo && state.agentInfo.registrationUrl) || "";
-        if (url) {
-          window.location.href = url;
-          return;
-        }
-      }
-      go("contactSuccess", { finished: true });
-    } catch (err) {
-      setState({ screen: "submitError" });
-    }
-  }
 
   /**
-   * Finds the Events row assigned to this visitor's ref (the private
-   * 1-on-1 session for their referring agent) and derives display info
-   * from it directly: title -> agent name, description -> why-relevant
-   * text, image_url -> photo, registration_url -> booking link.
-   * Falls back to DEFAULT_AGENT (generic, no photo/booking link) when
-   * nothing matches \u2014 e.g. no ref, or ref not yet configured in Sheets.
+   * Fetches all active events and shows only the ones whose `category`
+   * (set per-row in the Events sheet) matches the categories mapped to
+   * the person's growth-intent choice (see INTENT_CATEGORIES).
    */
-  async function loadAgentInfo() {
-    const ref = (window.Referral.get() || "").trim().toLowerCase();
-    const allEvents = await window.SheetsClient.getActiveEvents();
-    const match = allEvents.find((e) => e.assignedRef && ref && String(e.assignedRef).trim().toLowerCase() === ref);
-    const agentInfo = match
-      ? {
-          name: match.title || DEFAULT_AGENT.name,
-          photoUrl: match.imageUrl || "",
-          role: match.role || DEFAULT_AGENT.role,
-          whyRelevant: match.description || DEFAULT_AGENT.whyRelevant,
-          registrationUrl: match.registrationUrl || "",
-        }
-      : { ...DEFAULT_AGENT, registrationUrl: "" };
-    setState({ agentInfo });
-  }
-
-  /**
-   * "Explore My Profile with [Agent]" — opens the matched event's
-   * registration_url directly (e.g. a Lynk.id/Calendly link) if we have
-   * one cached. Falls back to the internal contact form so the flow
-   * never dead-ends.
-   */
-  /** "Explore the Business Opportunity" — shows public (non-assigned) events. */
-  async function openBusinessEvents() {
+  async function openEventsForIntent(intent) {
     setState({ screen: "eventLoading" });
     const allEvents = await window.SheetsClient.getActiveEvents();
-    const events = allEvents.filter((e) => !e.assignedRef);
+    const categories = INTENT_CATEGORIES[intent] || [];
+    const events = allEvents.filter((e) => categories.includes(String(e.category || "").trim().toLowerCase()));
     go("businessEvents", { events, expandedEventId: null });
   }
 
-  async function registerForEvent(ev, name, whatsapp) {
-    const finalName = name || (state.contact && state.contact.name) || "";
-    const finalWhatsapp = whatsapp || (state.contact && state.contact.whatsapp) || "";
+  async function registerForEvent(ev, name, whatsapp, instagram) {
     setState({ selectedEvent: ev, screen: "registering", eventRegisterError: null });
 
     try {
       await window.SheetsClient.submitRsvp({
         timestamp: new Date().toISOString(),
-        name: finalName,
-        whatsapp: finalWhatsapp,
+        name: name || "",
+        whatsapp: whatsapp || "",
+        instagram: instagram || "",
         sessionId: window.SheetsClient.getSessionId(),
         ref: window.Referral.get(),
         eventName: ev ? ev.title : "",
@@ -714,6 +518,14 @@
         eventTime: ev ? ev.time : "",
         consent: true,
       });
+      // "class" events are paid — after saving the lead, send them to
+      // Lynk.id to actually pay/reserve. Everything else lands on the
+      // normal "You're in" confirmation.
+      const isPaidClass = ev && String(ev.category || "").trim().toLowerCase() === "class";
+      if (isPaidClass && ev.registrationUrl) {
+        window.location.href = ev.registrationUrl;
+        return;
+      }
       go("rsvpSuccess", { finished: true });
     } catch (err) {
       setState({ screen: "businessEvents", eventRegisterError: COPY.errors.submitFailed });
@@ -774,23 +586,11 @@
       }
       setState({ growthIntent: intentId });
     } else if (action === "go-next-steps") {
-      // "Grow where I am" doesn't need Explore/Business — go straight to Share.
-      go(state.growthIntent === "grow_here" ? "share" : "nextSteps");
-    } else if (action === "cta-agent") {
-      if (!sessionStorage.getItem("cgc_tracked_cta_agent")) {
-        sessionStorage.setItem("cgc_tracked_cta_agent", "1");
-        window.SheetsClient.trackEvent("cta_agent_click");
+      if (!sessionStorage.getItem("cgc_tracked_go_next_steps")) {
+        sessionStorage.setItem("cgc_tracked_go_next_steps", "1");
+        window.SheetsClient.trackEvent(`explore_events:${state.growthIntent}`);
       }
-      setState({ contactPurpose: "agent", contactFormError: null });
-      go("contactForm");
-    } else if (action === "cta-business") {
-      if (!sessionStorage.getItem("cgc_tracked_cta_business")) {
-        sessionStorage.setItem("cgc_tracked_cta_business", "1");
-        window.SheetsClient.trackEvent("cta_business_click");
-      }
-      openBusinessEvents();
-    } else if (action === "retry-submit") {
-      submitContact();
+      openEventsForIntent(state.growthIntent);
     } else if (action === "share") {
       const url = window.Referral.buildShareUrl();
       const text = COPY.share.waMessageTemplate(url);
@@ -800,7 +600,7 @@
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
       }
     } else if (action === "retry-event") {
-      openBusinessEvents();
+      openEventsForIntent(state.growthIntent);
     } else if (action === "expand-event") {
       setState({ expandedEventId: btn.dataset.eventId, eventRegisterError: null });
     } else if (action === "open-external-booking") {
@@ -814,39 +614,21 @@
   });
 
   root.addEventListener("submit", (e) => {
-    if (e.target.id === "contact-form") {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const name = (fd.get("name") || "").toString().trim();
-      const whatsapp = (fd.get("whatsapp") || "").toString().trim();
-      const consent = fd.get("consent") === "on";
-      const isAgent = state.contactPurpose === "agent";
-      const instagram = isAgent ? (fd.get("instagram") || "").toString().trim() : "";
-      const mode = isAgent ? (fd.get("mode") || "").toString().trim() : "";
-      const errs = COPY.errors;
-
-      if (!name) return setState({ contactFormError: errs.invalidName });
-      if (!isValidWhatsapp(whatsapp)) return setState({ contactFormError: errs.invalidWhatsapp });
-      if (isAgent && !mode) return setState({ contactFormError: errs.modeRequired });
-      if (!consent) return setState({ contactFormError: errs.consentRequired });
-
-      setState({ contact: { name, whatsapp, instagram, mode }, contactFormError: null });
-      submitContact();
-    }
-
     if (e.target.classList.contains("inline-rsvp-form")) {
       e.preventDefault();
       const fd = new FormData(e.target);
       const name = (fd.get("name") || "").toString().trim();
       const whatsapp = (fd.get("whatsapp") || "").toString().trim();
+      const instagram = (fd.get("instagram") || "").toString().trim();
       const errs = COPY.errors;
       const eventId = e.target.dataset.eventId;
       const ev = (state.events || []).find((x) => String(x.id) === String(eventId));
 
       if (!name) return setState({ eventRegisterError: errs.invalidName });
       if (!isValidWhatsapp(whatsapp)) return setState({ eventRegisterError: errs.invalidWhatsapp });
+      if (!instagram) return setState({ eventRegisterError: errs.invalidInstagram });
 
-      registerForEvent(ev, name, whatsapp);
+      registerForEvent(ev, name, whatsapp, instagram);
     }
   });
 
@@ -856,9 +638,5 @@
     sessionStorage.setItem("cgc_tracked_landing", "1");
     window.SheetsClient.trackEvent("landing_view");
   }
-  // Fire-and-forget: by the time the person reaches the result page (after
-  // 15 questions), this has almost always already resolved. If it hasn't,
-  // the agent card just shows DEFAULT_AGENT until it does, then re-renders.
-  loadAgentInfo();
   render();
 })();
