@@ -1,8 +1,14 @@
 /**
- * SCORING ENGINE — V2
+ * SCORING ENGINE — V3
  * -----------------------------------------------------------------------
  * Pure, deterministic functions. No AI interpretation, no randomness.
- *   - dimension score = (answers assigned to dimension / 15) * 100, rounded
+ *   - dimension score = (times dimension X was chosen / times dimension X
+ *     appeared across all 75 option-slots) * 100, rounded.
+ *     V3's question set balances each dimension to 12-13 appearances
+ *     (previously as uneven as 4-16 in V2), and this per-dimension
+ *     normalization — instead of a flat "/15" — is what makes every
+ *     dimension able to genuinely reach 0-100%, regardless of exactly
+ *     how many times it happens to appear.
  *   - profile score = weighted sum of dimension scores per profile
  *     (POSITIVE EVIDENCE ONLY — no inverse/negative terms anywhere,
  *     so Explorer can never win purely by scoring low on other traits)
@@ -28,6 +34,19 @@ window.Scoring = (function () {
   // presented as a Blended Profile instead of a Clear Primary.
   const BLEND_THRESHOLD = 3;
 
+  // How many times each dimension actually appears across all options,
+  // computed from the live question set rather than hardcoded — so this
+  // stays correct automatically if questions are ever edited again.
+  function computeDimensionAppearances() {
+    const appearances = { A: 0, O: 0, R: 0, L: 0, P: 0, V: 0 };
+    QUESTIONS.forEach((q) => {
+      q.options.forEach((o) => {
+        appearances[o.dim] += 1;
+      });
+    });
+    return appearances;
+  }
+
   /**
    * answers: { [questionId]: optionId }
    * returns: { A: 40, O: 53, R: 33, L: 47, P: 40, V: 60 }
@@ -41,9 +60,11 @@ window.Scoring = (function () {
       if (opt) counts[opt.dim] += 1;
     });
 
+    const appearances = computeDimensionAppearances();
     const scores = {};
     DIMENSION_ORDER.forEach((dim) => {
-      scores[dim] = Math.round((counts[dim] / QUESTIONS.length) * 100);
+      const possible = appearances[dim] || 1; // guard against div-by-zero if a dim is ever unused
+      scores[dim] = Math.round((counts[dim] / possible) * 100);
     });
     return scores;
   }
@@ -110,6 +131,7 @@ window.Scoring = (function () {
     computeProfileScores,
     resolvePrimarySupporting,
     scoreAssessment,
+    computeDimensionAppearances,
     BLEND_THRESHOLD,
   };
 })();
