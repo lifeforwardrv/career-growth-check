@@ -111,10 +111,10 @@ window.APP_QUESTIONS = [
     text: "Ketika ada kemungkinan baru yang menarik, tapi kamu belum yakin itu cocok untukmu, apa yang paling kamu BUTUHKAN dulu sebelum memutuskan?",
     options: [
       { id: "q9o1", text: "Tahu seberapa besar ruang yang akan kumiliki untuk menentukan caraku sendiri bekerja.", dim: "O" },
-      { id: "q9o2", text: "Tahu dulu apa yang perlu kukuasai sebelum benar-benar terjun.", dim: "L" },
+      { id: "q9o2", text: "Tahu dulu apa yang perlu aku kuasai sebelum benar-benar terjun.", dim: "L" },
       { id: "q9o3", text: "Tahu apakah ini bisa membawa progress yang jauh lebih besar.", dim: "A" },
       { id: "q9o4", text: "Tahu apakah peluang ini benar-benar mendekatkanku ke gambaran besar yang sedang aku bangun untuk hidupku.", dim: "V" },
-      { id: "q9o5", text: "Yakin bahwa aku tetap bisa menjalaninya meski hasilnya belum pasti.", dim: "R" },
+      { id: "q9o5", text: "Merasa yakin bahwa aku tetap bisa menjalaninya meski hasilnya belum pasti.", dim: "R" },
     ],
   },
   {
